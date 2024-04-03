@@ -1,0 +1,19 @@
+Realizamos a validação usando os seguintes comandos:
+
+1) Primeiro emitimos um Individual Token Request
+$ python3 tp0.py slardar.snes.2advanced.dev 51001 itr marcotristao@dcc.ufmg.br 1
+
+Recebemos como retorno o SAS marcotristao:1:f137aab975240a7115b068f85473c15271bc3e55ea2a1803957a5c3d556dbbf4.
+
+2) Emitimos um Group Token Request
+$ python3 tp0.py slardar.snes.2advanced.dev 51001 gtr 1 marcotristao:1:f137aab975240a7115b068f85473c15271bc3e55ea2a1803957a5c3d556dbbf4
+
+Recebemos como retorno o GAS marcotristao:1:f137aab975240a7115b068f85473c15271bc3e55ea2a1803957a5c3d556dbbf4+83ded8457948144df2585573fb854893d04d2721e638d0e1c67f01d0a27a2a26.
+
+3) Emitimos um Group Token Validation
+$ python3 tp0.py slardar.snes.2advanced.dev 51001 gtv marcotristao:1:f137aab975240a7115b068f85473c15271bc3e55ea2a1803957a5c3d556dbbf4+83ded8457948144df2585573fb854893d04d2721e638d0e1c67f01d0a27a2a26
+
+Recebemos como retorno o token 0, indicando a validade do token.
+
+A validação foi realizada com tanto IPv4, quanto IPv6. Para isso, realizamos um loop por (socket.AF_INET, socket.AF_INET6),
+criando uma socket e transmitindo as mensagens em cada uma das opções de família.
