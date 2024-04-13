@@ -35,7 +35,6 @@ def send_individual_token_request(sock, id: str, nonce: str|int):
     """
     message = struct.pack('!H12sI', MESSAGE_TYPES['individual_token_request'],
                            bytes(id, encoding='ascii'), int(nonce))
-    print(message)
     sock.send(message)
 
 
