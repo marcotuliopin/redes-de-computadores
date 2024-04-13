@@ -51,7 +51,6 @@ def authenticate_connection(sockets, auth):
     return river_control
 
 
-
 def request_cannon_placement(sockets, auth):
     data = {"type": "getcannons", "auth": auth}
     response = None
@@ -77,51 +76,43 @@ def request_cannon_placement(sockets, auth):
 
     if not response:
         print(f'Socket failed.')
-        return None
+        raise CommunicationErrorException
 
     return response['cannons']
 
 
 def request_turn_state(sockets, auth, turn=0):
     data = {"type": "getturn", "auth": auth, "turn": turn}
+    state = []
 
-    for sock in sockets:
-        send_data(sock, data)
-
-    # Find which socket received the response
-    response = receive_response(sockets)
-    print(response)
-
-def post(sockets, data):
-    sock_error = [0] * len(sockets)
-    responses = []
-
-    while max(sock_error) < MAX_RETRIES:
-        for i in range(len(sockets)):
-            response = None
+    for i in range(len(sockets)):
+        retries = 0
+        response = None
+        while retries < MAX_RETRIES:
             try:
                 json_bytes = json.dumps(data).encode('utf-8')
                 sockets[i].sendall(json_bytes)
             except socket.error as e:
                 print(f'Socket {i} failed while sending data with error: {e}')
-                sock_error[i] += 1
+                retries += 1
                 continue
 
-        for i in range(len(sockets)):
+            response = None
             try: 
-                read_socket, _, _ = select.select(sockets, [], [], TIMEOUT)
-                response = read_socket[0].recv(1024)
+                response = sockets[i].recv(1024)
                 response = json.loads(response)
             except socket.timeout as e:
                 print(f'Socket {i} failed while receiving data with error: {e}')
-                sock_error[i] += 1
+                retries += 1
 
         if not response:
             print(f'Socket {i} failed.')
-            return None
-        responses.append(response)
+            raise CommunicationErrorException
 
-    return responses
+        state.append({'bridge': response['bridge'], 
+                      'ships': [{'hull': ship['hull'], 'hits': ship['hits']} 
+                                for ship in response['ships']]})
+    return state
 
 
 class AuthenticationFailedException(Exception):
