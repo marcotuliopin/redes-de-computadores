@@ -1,11 +1,17 @@
 import socket
 import json
 import select
+from queue import Queue
 from sys import argv
 
+
+"""
+Constant Definitions.
+"""
 NUM_SERVERS = 4
 MAX_RETRIES = 3
 TIMEOUT = 0.5
+INVALID_MESSAGE = 23
 
 
 def open_sockets(family, type, adresses):
@@ -22,31 +28,34 @@ def authenticate_connection(sockets, auth):
     data = {"type": "authreq", "auth": auth}
     river_control = {}
 
-    for i in range(len(sockets)):
-        retries = 0
-        while retries < MAX_RETRIES:
-            try:
-                json_bytes = json.dumps(data).encode('utf-8')
-                sockets[i].sendall(json_bytes)
-            except socket.error as e:
-                print(f'Socket {i} failed while sending data with error: {e}')
-                retries += 1
-                continue
+    recv_queue = Queue(len(sockets))
+    send_queue = Queue(len(sockets))
+    for i in range(sockets):
+        send_queue.put(i)
 
-            response = None
-            try: 
-                response = sockets[i].recv(1024)
-                response = json.loads(response)
+    retries = [0] * len(sockets)
+    while not send_queue.empty() and max(retries) < MAX_RETRIES:
+        try:
+            while not send_queue.empty():
+                idx = send_queue.get()
+                json_bytes = json.dumps(data).encode('utf-8')
+                sockets[idx].sendall(json_bytes)
+                recv_queue.put(idx)
+            
+            while not recv_queue.empty():
+                idx = recv_queue.empty()
+                response = receive_response(sockets[idx])
                 if response['status'] == 1:
                     raise AuthenticationFailedException
-                river_control[i] = response['river']
-            except socket.timeout as e:
-                print(f'Socket {i} failed while receiving data with error: {e}')
-                retries += 1
+                river_control[idx] = response['river']
 
-        if not response:
-            print(f'Socket {i} failed.')
-            raise CommunicationErrorException
+        except (socket.error, socket.timeout) as e:
+            print(f'Socket {idx} failed with error: {e}')
+            retries[idx] += 1
+            send_queue.put(idx)
+
+    if max(retries) >= MAX_RETRIES:
+        raise CommunicationErrorException
 
     return river_control
 
@@ -55,27 +64,34 @@ def request_cannon_placement(sockets, auth):
     data = {"type": "getcannons", "auth": auth}
     response = None
     
-    post_retries = [0] * len(sockets)
-    get_retries = 0
-    while max(post_retries) < MAX_RETRIES and get_retries < MAX_RETRIES:
-        for i in range(len(sockets)):
-            try:
+    send_queue = Queue(len(sockets))
+    for i in range(sockets):
+        send_queue.put(i)
+
+    retries = [0] * len(sockets)
+    while not send_queue.empty() and max(retries) < MAX_RETRIES:
+        try:
+            while not send_queue.empty():
+                idx = send_queue.get()
                 json_bytes = json.dumps(data).encode('utf-8')
                 sockets[i].sendall(json_bytes)
-            except socket.error as e:
-                print(f'Socket {i} failed while sending data with error: {e}')
-                post_retries[i] += 1
 
-        try: 
+        except (socket.error, socket.timeout) as e:
+            print(f'Socket {idx} failed while sending data with error: {e}')
+            retries[idx] += 1
+            send_queue.put(idx)
+
+        try:
             read_socket, _, _ = select.select(sockets, [], [], TIMEOUT)
-            response = read_socket[0].recv(1024)
-            response = json.loads(response)
-        except socket.timeout as e:
-            print(f'Socket failed while receiving data with error: {e}')
-            get_retries += 1
+            response = receive_response(read_socket)
 
-    if not response:
-        print(f'Socket failed.')
+        except (socket.error, socket.timeout) as e:
+            print(f'Socket {idx} failed while receiving response with error: {e}')
+            for i in range(sockets):
+                retries[i] += 1
+                send_queue.put(i)
+
+    if max(retries) >= MAX_RETRIES:
         raise CommunicationErrorException
 
     return response['cannons']
@@ -85,41 +101,47 @@ def request_turn_state(sockets, auth, turn=0):
     data = {"type": "getturn", "auth": auth, "turn": turn}
     state = []
 
-    for i in range(len(sockets)):
-        retries = 0
+    recv_queue = Queue(len(sockets))
+    send_queue = Queue(len(sockets))
+    for i in range(sockets):
+        send_queue.put(i)
+
+    retries = [0] * len(sockets)
+    while not send_queue.empty() and max(retries) < MAX_RETRIES:
         response = None
-        while retries < MAX_RETRIES:
-            try:
+
+        try:
+            while not send_queue.empty():
+                idx = send_queue.get()
                 json_bytes = json.dumps(data).encode('utf-8')
-                sockets[i].sendall(json_bytes)
-            except socket.error as e:
-                print(f'Socket {i} failed while sending data with error: {e}')
-                retries += 1
-                continue
+                sockets[idx].sendall(json_bytes)
+                recv_queue.put(idx)
+            
+            while not recv_queue.empty():
+                idx = recv_queue.empty()
+                response = receive_response(sockets[idx])
 
-            response = None
-            try: 
-                response = sockets[i].recv(1024)
-                response = json.loads(response)
-            except socket.timeout as e:
-                print(f'Socket {i} failed while receiving data with error: {e}')
-                retries += 1
-
-        if not response:
-            print(f'Socket {i} failed.')
-            raise CommunicationErrorException
+        except (socket.error, socket.timeout) as e:
+            print(f'Socket {idx} failed with error: {e}')
+            retries[idx] += 1
+            send_queue.put(idx)
+            continue
 
         state.append({'bridge': response['bridge'], 
-                      'ships': [{'hull': ship['hull'], 'hits': ship['hits']} 
-                                for ship in response['ships']]})
+                      'ships': response['ships']})
+
+    if max(retries) >= MAX_RETRIES:
+        raise CommunicationErrorException
+
     return state
 
 
-class AuthenticationFailedException(Exception):
-    pass
-
-class CommunicationErrorException(Exception):
-    pass
+def receive_response(sock):
+    response = sock[0].recv(1024)
+    response = json.loads(response)
+    if response['type'] == 'gameover'and response['status'] == 1:
+        raise InvalidMessageException(response['description'])
+    return response
 
 
 def main():
@@ -144,14 +166,33 @@ def main():
     print("Connected!")
 
     try:
-        river_control = authenticate_connection(sockets, auth=gas)
-        cannon_placement = request_cannon_placement(sockets, auth=gas)
-        
+        while True:
+            try:
+                river_control = authenticate_connection(sockets, gas)
+                cannon_placement = request_cannon_placement(sockets, gas)
+                break
+            except InvalidMessageException as e:
+                print('Error occurred: ' + {e})
+                print('Restarting game...')
 
     # Ensure sockets are closed
     finally:
         for sock in sockets:
             sock.close()
+
+
+"""
+Exceptions Definitions.
+"""
+class AuthenticationFailedException(Exception):
+    pass
+
+class CommunicationErrorException(Exception):
+    pass
+
+class InvalidMessageException(Exception):
+    def __init__(self, message):
+        super().__init__(message)
 
 
 if __name__ == '__main__':

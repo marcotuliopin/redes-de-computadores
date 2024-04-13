@@ -24,6 +24,22 @@ import struct
 from sys import argv
 
 
+"""
+Constant Definitions.
+"""
+MESSAGE_TYPES = {
+    'individual_token_request': 1,
+    'individual_token_response': 2,
+    'individual_token_validation': 3,
+    'individual_token_status': 4,
+    'group_token_request': 5,
+    'group_token_response': 6,
+    'group_token_validation': 7,
+    'group_token_status': 8,
+    'error_message': 256
+}
+
+
 def send_individual_token_request(sock, id: str, nonce: str|int):
     """
     send_individual_token_request:
@@ -224,58 +240,6 @@ def construct_gas(sas_tokens, token):
     return '+'.join(sas_list + [str(token)])
 
 
-"""
-Exceptions Definitions.
-"""
-class WrongArgumentNumberException(Exception):
-    pass
-
-class InvalidCommandException(Exception):
-    pass
-
-class InvalidMessageCodeException(Exception):
-    pass
-
-class IncorrectMessageLengthException(Exception):
-    pass
-
-class InvalidParameterException(Exception):
-    pass
-
-class InvalidSingleTokenException(Exception):
-    pass
-
-class AsciiDecodeErrorException(Exception):
-    pass
-
-class UnknownErrorException(Exception):
-    pass
-
-
-"""
-Constant Definitions.
-"""
-ERROR_TYPES = {
-    1: InvalidMessageCodeException(),
-    2: IncorrectMessageLengthException(),
-    3: InvalidParameterException(),
-    4: InvalidSingleTokenException(),
-    5: AsciiDecodeErrorException(),
-}
-
-MESSAGE_TYPES = {
-    'individual_token_request': 1,
-    'individual_token_response': 2,
-    'individual_token_validation': 3,
-    'individual_token_status': 4,
-    'group_token_request': 5,
-    'group_token_response': 6,
-    'group_token_validation': 7,
-    'group_token_status': 8,
-    'error_message': 256
-}
-
-
 def main():
     if len(argv) < 4:
         raise WrongArgumentNumberException()
@@ -321,6 +285,41 @@ def main():
     finally:
         sock.close()
 
+
+"""
+Exceptions Definitions.
+"""
+class WrongArgumentNumberException(Exception):
+    pass
+
+class InvalidCommandException(Exception):
+    pass
+
+class InvalidMessageCodeException(Exception):
+    pass
+
+class IncorrectMessageLengthException(Exception):
+    pass
+
+class InvalidParameterException(Exception):
+    pass
+
+class InvalidSingleTokenException(Exception):
+    pass
+
+class AsciiDecodeErrorException(Exception):
+    pass
+
+class UnknownErrorException(Exception):
+    pass
+
+ERROR_TYPES = {
+    1: InvalidMessageCodeException(),
+    2: IncorrectMessageLengthException(),
+    3: InvalidParameterException(),
+    4: InvalidSingleTokenException(),
+    5: AsciiDecodeErrorException(),
+}
 
 if __name__ == "__main__":
     main()
