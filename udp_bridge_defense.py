@@ -8,7 +8,7 @@ from sys import argv
 """
 Constant Definitions.
 """
-NUM_SERVERS = 4
+NUM_RIVERS = 4
 MAX_RETRIES = 3
 TIMEOUT = 0.5
 INVALID_MESSAGE = 23
@@ -28,12 +28,12 @@ def authenticate_connection(sockets, auth):
     data = {"type": "authreq", "auth": auth}
     river_control = {}
 
-    recv_queue = Queue(len(sockets))
-    send_queue = Queue(len(sockets))
-    for i in range(sockets):
+    recv_queue = Queue(NUM_RIVERS)
+    send_queue = Queue(NUM_RIVERS)
+    for i in range(NUM_RIVERS):
         send_queue.put(i)
 
-    retries = [0] * len(sockets)
+    retries = [0] * NUM_RIVERS
     while not send_queue.empty() and max(retries) < MAX_RETRIES:
         try:
             while not send_queue.empty():
@@ -64,11 +64,11 @@ def request_cannon_placement(sockets, auth):
     data = {"type": "getcannons", "auth": auth}
     response = None
     
-    send_queue = Queue(len(sockets))
-    for i in range(sockets):
+    send_queue = Queue(NUM_RIVERS)
+    for i in range(NUM_RIVERS):
         send_queue.put(i)
 
-    retries = [0] * len(sockets)
+    retries = [0] * NUM_RIVERS
     while not send_queue.empty() and max(retries) < MAX_RETRIES:
         try:
             while not send_queue.empty():
@@ -83,7 +83,7 @@ def request_cannon_placement(sockets, auth):
 
         try:
             read_socket, _, _ = select.select(sockets, [], [], TIMEOUT)
-            response = receive_response(read_socket)
+            response = receive_response(read_socket[0])
 
         except (socket.error, socket.timeout) as e:
             print(f'Socket {idx} failed while receiving response with error: {e}')
@@ -99,17 +99,15 @@ def request_cannon_placement(sockets, auth):
 
 def request_turn_state(sockets, auth, turn=0):
     data = {"type": "getturn", "auth": auth, "turn": turn}
-    state = []
+    state = [[] for _ in range(NUM_RIVERS)]
 
-    recv_queue = Queue(len(sockets))
-    send_queue = Queue(len(sockets))
-    for i in range(sockets):
+    recv_queue = Queue(NUM_RIVERS)
+    send_queue = Queue(NUM_RIVERS)
+    for i in range(NUM_RIVERS):
         send_queue.put(i)
 
-    retries = [0] * len(sockets)
+    retries = [0] * NUM_RIVERS
     while not send_queue.empty() and max(retries) < MAX_RETRIES:
-        response = None
-
         try:
             while not send_queue.empty():
                 idx = send_queue.get()
@@ -120,15 +118,15 @@ def request_turn_state(sockets, auth, turn=0):
             while not recv_queue.empty():
                 idx = recv_queue.empty()
                 response = receive_response(sockets[idx])
+                print(response)
+                state[idx].append({'bridge': response['bridge'], 
+                            'ships': response['ships']})
 
         except (socket.error, socket.timeout) as e:
             print(f'Socket {idx} failed with error: {e}')
             retries[idx] += 1
             send_queue.put(idx)
             continue
-
-        state.append({'bridge': response['bridge'], 
-                      'ships': response['ships']})
 
     if max(retries) >= MAX_RETRIES:
         raise CommunicationErrorException
@@ -137,7 +135,7 @@ def request_turn_state(sockets, auth, turn=0):
 
 
 def receive_response(sock):
-    response = sock[0].recv(1024)
+    response = sock.recv(1024)
     response = json.loads(response)
     if response['type'] == 'gameover'and response['status'] == 1:
         raise InvalidMessageException(response['description'])
@@ -149,7 +147,7 @@ def main():
     _, host, port1, gas = argv
     port1 = int(port1)
 
-    ports = range(port1, port1 + NUM_SERVERS)
+    ports = range(port1, port1 + NUM_RIVERS)
     adresses = [(host, port) for port in ports]
 
     # Try to connect to IPv6
@@ -170,6 +168,11 @@ def main():
             try:
                 river_control = authenticate_connection(sockets, gas)
                 cannon_placement = request_cannon_placement(sockets, gas)
+                turn = 0
+                while True:
+                    state = request_turn_state(sockets, gas, turn)
+                    turn += 1
+
                 break
             except InvalidMessageException as e:
                 print('Error occurred: ' + {e})
