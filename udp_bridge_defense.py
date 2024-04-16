@@ -116,7 +116,7 @@ def request_turn_state(sockets, auth, turn=0):
                 recv_queue.put(idx)
             
             while not recv_queue.empty():
-                idx = recv_queue.empty()
+                idx = recv_queue.get()
                 response = receive_response(sockets[idx])
                 print(response)
                 state[idx].append({'bridge': response['bridge'], 
