@@ -134,6 +134,14 @@ def request_turn_state(sockets, auth, turn=0):
     return state
 
 
+def shoot():
+    pass
+
+
+def quit():
+    pass
+
+
 def receive_response(sock):
     response = sock.recv(1024)
     response = json.loads(response)
