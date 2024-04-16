@@ -43,7 +43,7 @@ def authenticate_connection(sockets, auth):
                 recv_queue.put(idx)
             
             while not recv_queue.empty():
-                idx = recv_queue.empty()
+                idx = recv_queue.get()
                 response = receive_response(sockets[idx])
                 if response['status'] == 1:
                     raise AuthenticationFailedException
