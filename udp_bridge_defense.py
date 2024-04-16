@@ -44,7 +44,9 @@ def authenticate_connection(sockets, auth):
             
             while not recv_queue.empty():
                 idx = recv_queue.get()
+                print("IDX",idx,"\n")
                 response = receive_response(sockets[idx])
+                print(response,"\n")
                 if response['status'] == 1:
                     raise AuthenticationFailedException
                 river_control[idx] = response['river']
@@ -71,7 +73,7 @@ def request_cannon_placement(sockets, auth):
     retries = [0] * NUM_RIVERS
     while not send_queue.empty() and max(retries) < MAX_RETRIES:
         try:
-            while not send_queue.empty():
+            if not send_queue.empty():
                 idx = send_queue.get()
                 json_bytes = json.dumps(data).encode('utf-8')
                 sockets[i].sendall(json_bytes)
@@ -93,7 +95,7 @@ def request_cannon_placement(sockets, auth):
 
     if max(retries) >= MAX_RETRIES:
         raise CommunicationErrorException
-
+    
     return response['cannons']
 
 
@@ -118,7 +120,10 @@ def request_turn_state(sockets, auth, turn=0):
             while not recv_queue.empty():
                 idx = recv_queue.get()
                 response = receive_response(sockets[idx])
-                print(response)
+                print(sockets[idx],"\n\n")
+                print(response,"\n\n")
+                if(response["type"]=="gameover" and response["status"]==0):
+                    return True, response["score"]
                 state[idx].append({'bridge': response['bridge'], 
                             'ships': response['ships']})
 
@@ -131,15 +136,37 @@ def request_turn_state(sockets, auth, turn=0):
     if max(retries) >= MAX_RETRIES:
         raise CommunicationErrorException
 
-    return state
+    return False,state
 
 
 def shoot():
     pass
 
 
-def quit():
-    pass
+def quit(sockets,auth): #assumindo que nao tem nenhuma resposta por terminar, ja que nao tem nada especificado
+    data = {"type": "quit","auth": auth}
+    state = [[] for _ in range(NUM_RIVERS)]
+
+    send_queue = Queue(NUM_RIVERS)
+    for i in range(NUM_RIVERS):
+        send_queue.put(i)
+
+    retries = [0] * NUM_RIVERS
+    while not send_queue.empty() and max(retries) < MAX_RETRIES:
+        try:
+            while not send_queue.empty():
+                idx = send_queue.get()
+                json_bytes = json.dumps(data).encode('utf-8')
+                sockets[idx].sendall(json_bytes)
+
+        except (socket.error, socket.timeout) as e:
+            print(f'Socket {idx} failed with error: {e}')
+            retries[idx] += 1
+            send_queue.put(idx)
+            continue
+
+    if max(retries) >= MAX_RETRIES:
+        raise CommunicationErrorException
 
 
 def receive_response(sock):
@@ -147,6 +174,7 @@ def receive_response(sock):
     response = json.loads(response)
     if response['type'] == 'gameover'and response['status'] == 1:
         raise InvalidMessageException(response['description'])
+    
     return response
 
 
@@ -165,25 +193,33 @@ def main():
             sock.connect(adress)
     # Try connecting to IPv4 if the connection in IPv6 is not successful
     except socket.error as e:
-        print("IPv6 connection failed. Connecting to IPv4...")
         sockets = open_sockets(socket.AF_INET, socket.SOCK_DGRAM, adresses)
         for sock, adress in zip(sockets, adresses):
             sock.connect(adress)
     print("Connected!")
-
     try:
         while True:
             try:
-                river_control = authenticate_connection(sockets, gas)
-                cannon_placement = request_cannon_placement(sockets, gas)
+                river_control = authenticate_connection(sockets, gas)#Aparentemente funciona corretamente
+                print("\n\n\nAuthenticated Connections\n\n\n")
+                cannon_placement = request_cannon_placement(sockets, gas)#Aparentemente funciona corretamente
+                print(cannon_placement)
+                print("\n\n\nGot Cannon Placement\n\n\n")
+                
                 turn = 0
                 while True:
-                    state = request_turn_state(sockets, gas, turn)
+                    endgame,state = request_turn_state(sockets, gas, turn)
+                    print("\nEnd of turn "+str(turn)+"\n")
+                    break
+                    if(endgame):
+                        print("Quitting")
+                        quit(sockets,gas)
+                        break
                     turn += 1
 
                 break
             except InvalidMessageException as e:
-                print('Error occurred: ' + {e})
+                print('Error occurred: ' + str(e))
                 print('Restarting game...')
 
     # Ensure sockets are closed
