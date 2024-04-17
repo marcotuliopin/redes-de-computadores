@@ -9,6 +9,7 @@ from sys import argv
 Constant Definitions.
 """
 NUM_RIVERS = 4
+NUM_BRIDGES = 8
 MAX_RETRIES = 3
 TIMEOUT = 0.5
 INVALID_MESSAGE = 23
@@ -49,7 +50,7 @@ def authenticate_connection(sockets, auth):
                 print(response,"\n")
                 if response['status'] == 1:
                     raise AuthenticationFailedException
-                river_control[idx] = response['river']
+                river_control[idx] =  response['river']
 
         except (socket.error, socket.timeout) as e:
             print(f'Socket {idx} failed with error: {e}')
@@ -99,14 +100,17 @@ def request_cannon_placement(sockets, auth):
     return response['cannons']
 
 
-def request_turn_state(sockets, auth, turn=0):
+def request_turn_state(sockets, river_control, auth, turn=0):
     data = {"type": "getturn", "auth": auth, "turn": turn}
-    state = [[] for _ in range(NUM_RIVERS)]
-
-    recv_queue = Queue(NUM_RIVERS)
+    state = {}
+    for i in range(1, NUM_BRIDGES + 1):
+        state[i] = {}
+        for j in range(1, NUM_RIVERS + 1):
+            state[i][j] = []
+    recv_queue = Queue(NUM_RIVERS * NUM_BRIDGES)
     send_queue = Queue(NUM_RIVERS)
     for i in range(NUM_RIVERS):
-        send_queue.put(i)
+            send_queue.put(i)
 
     retries = [0] * NUM_RIVERS
     while not send_queue.empty() and max(retries) < MAX_RETRIES:
@@ -115,17 +119,16 @@ def request_turn_state(sockets, auth, turn=0):
                 idx = send_queue.get()
                 json_bytes = json.dumps(data).encode('utf-8')
                 sockets[idx].sendall(json_bytes)
-                recv_queue.put(idx)
+                for _ in range(NUM_BRIDGES):
+                    recv_queue.put(idx)
             
             while not recv_queue.empty():
                 idx = recv_queue.get()
                 response = receive_response(sockets[idx])
-                print(sockets[idx],"\n\n")
-                print(response,"\n\n")
-                if(response["type"]=="gameover" and response["status"]==0):
+                if(response["type"] == "gameover" and response["status"]==0):
                     return True, response["score"]
-                state[idx].append({'bridge': response['bridge'], 
-                            'ships': response['ships']})
+                state[response['bridge']][river_control[idx]] = response['ships']
+               
 
         except (socket.error, socket.timeout) as e:
             print(f'Socket {idx} failed with error: {e}')
@@ -139,8 +142,55 @@ def request_turn_state(sockets, auth, turn=0):
     return False,state
 
 
-def shoot():
-    pass
+def shoot(state, cannon_placement, river_control, sockets, auth):
+    def get_river_targets(cannon_river):
+        if(cannon_river == 0):
+            return [1]
+        elif (cannon_river == NUM_RIVERS):
+            return [NUM_RIVERS]
+        else:
+            return [cannon_river, cannon_river + 1]
+        
+        
+    def send_shot(cannon, ship_river, ship_id):
+        data = {"type": "shot", "auth": auth, "cannon": cannon, "id": ship_id}
+        idx = -1
+        for key, value in river_control.items():
+            if value == ship_river:
+                idx = key
+        if idx == -1:
+            raise Exception(f"{ship_river} not found in river control")
+        json_bytes = json.dumps(data).encode('utf-8')
+        sockets[idx].sendall(json_bytes)
+        response = receive_response(sockets[idx])
+        if(response['status'] != 0):
+            print(f"Shot error: {response['description']}")
+        else:
+            print(f"Shot {ship_id}")
+        # print("Response shot: ")
+        # print(response)
+    
+    def calculate_ship_health(hull, hits):
+        if hull == 'frigate':
+            return 1 - hits
+        elif hull == 'destroyer':
+            return 2 - hits
+        elif hull == 'battleship':
+            return 3 - hits
+        else:
+            raise Exception(f"{hull} is not a valid hull")
+    
+    for [cannon_bridge, cannon_river] in cannon_placement:
+        rivers = get_river_targets(cannon_river)
+        for target_river in rivers:
+            if (state[cannon_bridge][target_river]):
+                first_ship = state[cannon_bridge][target_river][0]
+                send_shot([cannon_bridge, cannon_river], target_river, first_ship['id']) 
+                state[cannon_bridge][target_river].pop(0)
+                break
+                
+          
+    
 
 
 def quit(sockets,auth): #assumindo que nao tem nenhuma resposta por terminar, ja que nao tem nada especificado
@@ -170,7 +220,7 @@ def quit(sockets,auth): #assumindo que nao tem nenhuma resposta por terminar, ja
 
 
 def receive_response(sock):
-    response = sock.recv(1024)
+    response = sock.recv(2048)
     response = json.loads(response)
     if response['type'] == 'gameover'and response['status'] == 1:
         raise InvalidMessageException(response['description'])
@@ -201,20 +251,23 @@ def main():
         while True:
             try:
                 river_control = authenticate_connection(sockets, gas)#Aparentemente funciona corretamente
-                print("\n\n\nAuthenticated Connections\n\n\n")
+                print("\nAuthenticated Connections\n")
+                print(river_control) # 
                 cannon_placement = request_cannon_placement(sockets, gas)#Aparentemente funciona corretamente
+                print("\nGot Cannon Placement\n")
                 print(cannon_placement)
-                print("\n\n\nGot Cannon Placement\n\n\n")
                 
                 turn = 0
                 while True:
-                    endgame,state = request_turn_state(sockets, gas, turn)
-                    print("\nEnd of turn "+str(turn)+"\n")
-                    break
+                    endgame,state = request_turn_state(sockets, river_control, gas, turn)
+                    print("End of turn "+ str(turn) +"\n")
                     if(endgame):
+                        print(state)
                         print("Quitting")
                         quit(sockets,gas)
                         break
+                    shoot(state, cannon_placement, river_control, sockets, gas)
+                   
                     turn += 1
 
                 break
