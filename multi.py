@@ -3,6 +3,7 @@ import threading
 import json
 import multiprocessing
 from sys import argv
+from collections import deque
 
 """
 Constant Definitions
@@ -23,7 +24,7 @@ for i in range(NUM_RIVERS):
     events[i].clear()
 # C 1 C 2 C 3 C 4 C
 # 1-2 2-3 3-4
-
+cannon_shot = [False]
 def play(auth, server_adress):
     try:
         sock = create_socket(server_adress)
@@ -35,25 +36,25 @@ def play(auth, server_adress):
         barrier.wait()
         print('Authenticated')
 
-        cannons = place_cannons(sock, auth)
-        print("type ", type(cannons))
+        cannons = place_cannons(sock, auth) # cannons is not being shared across threads. That has to change.
+        # cannons = Queue.queue(cannons)
         barrier.wait()
         print('Cannons placed')
         turn = 0
         while True:
-            ships = pass_turn(sock, auth, turn)
-            print(ships)
+            ships_pre_bridge = pass_turn(sock, auth, turn)
             barrier.wait()
             events[0].set()
             events[my_river-1].wait()
-            shoot(my_river)
+            print(f"river: {my_river} : {cannons}")
+            shoot(sock, auth, my_river, ships_pre_bridge, cannons)
             events[my_river-1].clear()
             if(my_river != NUM_RIVERS):
                 events[my_river].set()
-            
             break
-        quit(sock, auth)
-
+        barrier.wait()
+        if(my_river == 1): # thread 1 is responsible for quitting the game
+            quit(sock, auth)
         """ locks[my_river - 1].lock()
         locks[my_river + 1].lock()
         try:
@@ -119,16 +120,16 @@ def place_cannons(sock, auth):
 
 def pass_turn(sock, auth, turn):
     data = {'type' : 'getturn', 'auth': auth, 'turn': turn }
+    send(sock, data)
     ships_per_bridge = {}
     retries = 0
     count_responses = 0
     while count_responses < NUM_BRIDGES:
         while retries <= MAX_RETRIES:
             try:
-                send(sock, data)
                 # TODO: checar se todas as portas recebem resposta.
                 response = receive(sock)
-                #print(response)
+                # print(response)
                 if(response['ships']):
                     ships_per_bridge[response['bridge']] = response['ships']
                 count_responses+=1
@@ -147,13 +148,37 @@ def quit(sock, auth):
             send(sock, data)
             break
         except (socket.error, socket.timeout) as e:
-            print('In cannon placement:')
+            print('In quit:')
             print(f'Thread {threading.current_thread} failed with error: {e}')
             retries += 1
 
-def shoot(my_river):
-    print(my_river)
-    pass
+def shoot(sock, auth, river, ships_per_pridge, cannons):
+    def send_shot(cannon, ship_id):
+        data = {"type": "shot", "auth": auth, "cannon": cannon, "id": ship_id}
+        retries = 0
+        while retries <= MAX_RETRIES:
+            try:
+                send(sock, data)
+                break
+            except (socket.error, socket.timeout) as e:
+                print('In quit:')
+                print(f'Thread {threading.current_thread} failed with error: {e}')
+            retries += 1
+        response = receive(sock)
+        if(response['status'] != 0):
+            print(f"Shot error (cannon: {cannon}): {response['description']}")
+        else:
+            print(f"{cannon} shot {ship_id}")
+    
+ 
+    for bridge in ships_per_pridge:
+        for i in range(len(cannons)):
+            if(cannons[i][0] == bridge and (cannons[i][1] == river or cannons[i][1] == river - 1)):
+                print(f"river: {river} idx cannon: {i}")
+                send_shot(cannons[i], ships_per_pridge[bridge][0]['id']) # shoots firts element
+                cannons.pop(i)
+                break
+            pass
 
 def send(sock, data):
     message = json.dumps(data).encode('utf-8')
@@ -171,9 +196,9 @@ def main():
 
     _, host, port1, auth = argv
 
-    parts = auth.split(':', 1)
+    """ parts = auth.split(':', 1)
     padded_part = parts[0].ljust(12)
-    auth = ':'.join([padded_part, parts[1]])
+    auth = ':'.join([padded_part, parts[1]]) """
 
     port1 = int(port1) 
     ports = range(port1, port1 + NUM_RIVERS)
@@ -190,7 +215,6 @@ def main():
     finally:
         for t in threads:
             t.join()
-
 
 """
 Exceptions Definitions.
