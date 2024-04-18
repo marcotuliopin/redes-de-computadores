@@ -49,6 +49,7 @@ def send_individual_token_request(sock, id: str, nonce: str|int):
     - id: A string representing the student's ID (NetID).
     - nonce: An integer representing the token nonce.
     """
+    id = id.ljust(12)
     message = struct.pack('!H12sI', MESSAGE_TYPES['individual_token_request'],
                            bytes(id, encoding='ascii'), int(nonce))
     sock.send(message)
@@ -63,6 +64,7 @@ def send_individual_token_validation(sock, sas: str):
     - sas: A string representing the student authentication sequence (SAS) in the format "ID:nonce:token".
     """
     id, nonce, token = sas.split(sep=':')
+    id = id.ljust(12)
 
     message = struct.pack('!H12sI64s', MESSAGE_TYPES['individual_token_validation'],
                           bytes(id, encoding='ascii'), int(nonce), bytes(token, encoding='ascii'))
@@ -83,6 +85,7 @@ def send_group_token_request(sock, N: str|int, *sas_list: tuple[str]):
     # Pack each SAS
     for sas in sas_list:
         id, nonce, token = sas.split(sep=':')
+        id = id.ljust(12)
         aux = struct.pack('!12sI64s', bytes(id, encoding='ascii'), int(nonce),
                           bytes(token, encoding='ascii'))
         message += aux
@@ -134,7 +137,6 @@ def receive_individual_token_response(sock):
     response = struct.unpack('!H12sI64s', buffer)
     response = tuple(value.decode('ascii') if isinstance(value, bytes)
                              else value for value in response)
-
     return response
 
 
@@ -181,7 +183,6 @@ def receive_group_token_response(sock, N: str|int):
     response = struct.unpack(f'!HH{N*"12sI64s"}64s', buffer)
     response = tuple(value.decode('ascii') if isinstance(value, bytes)
                              else value for value in response)
-
     return response
 
 
@@ -265,20 +266,20 @@ def main():
                 send_individual_token_request(sock, *cmd[1:])
                 response = receive_individual_token_response(sock)
                 sas = construct_sas(response[1:])
-                print(sas)
+                print(sas.replace(' ', ''))
             case 'itv':
                 send_individual_token_validation(sock, *cmd[1:])
                 response = receive_individual_token_status(sock)
-                print(response[-1]) # Print validation token
+                print(response[-1].replace(' ', '')) # Print validation token
             case 'gtr':
                 send_group_token_request(sock, *cmd[1:])
                 response = receive_group_token_response(sock, cmd[1])
                 gas = construct_gas(response[2:-1], response[-1])
-                print(gas)
+                print(gas.replace(' ', ''))
             case 'gtv':
                 N = send_group_token_validation(sock, *cmd[1:])
                 response = receive_group_token_status(sock, N)
-                print(response[-1]) # Print validation token
+                print(response[-1].replace(' ', '')) # Print validation token
             case _:
                 InvalidCommandException()
     # Ensure sockets are closed
