@@ -8,6 +8,7 @@ from sys import argv
 Constant Definitions
 """
 NUM_RIVERS = 4
+NUM_BRIDGES = 8
 TIMEOUT = 0.5
 MAX_RETRIES = 10
 
@@ -16,11 +17,14 @@ barrier = threading.Barrier(NUM_RIVERS)
 locks = []
 for i in range(NUM_RIVERS):
     locks.append(threading.Lock())
-
+events = []
+for i in range(NUM_RIVERS):
+    events.append(threading.Event())
+    events[i].clear()
 # C 1 C 2 C 3 C 4 C
 # 1-2 2-3 3-4
 
-def play(auth, server_adress, pipe):
+def play(auth, server_adress):
     try:
         sock = create_socket(server_adress)
         barrier.wait()
@@ -32,21 +36,32 @@ def play(auth, server_adress, pipe):
         print('Authenticated')
 
         cannons = place_cannons(sock, auth)
+        print("type ", type(cannons))
         barrier.wait()
         print('Cannons placed')
-
+        turn = 0
         while True:
-            pass_turn()
+            ships = pass_turn(sock, auth, turn)
+            print(ships)
             barrier.wait()
-
-            locks[my_river - 1].lock()
-            locks[my_river + 1].lock()
-            try:
-                pass
-            finally:
-                locks[my_river - 1].unlock()
-                locks[my_river + 1].unlock()
+            events[0].set()
+            events[my_river-1].wait()
+            shoot(my_river)
+            events[my_river-1].clear()
+            if(my_river != NUM_RIVERS):
+                events[my_river].set()
+            
             break
+        quit(sock, auth)
+
+        """ locks[my_river - 1].lock()
+        locks[my_river + 1].lock()
+        try:
+            pass
+        finally:
+            locks[my_river - 1].unlock()
+            locks[my_river + 1].unlock()
+        break """
     finally:
         sock.close()
 
@@ -102,10 +117,42 @@ def place_cannons(sock, auth):
     
     return response['cannons']
 
-def pass_turn():
-    pass
+def pass_turn(sock, auth, turn):
+    data = {'type' : 'getturn', 'auth': auth, 'turn': turn }
+    ships_per_bridge = {}
+    retries = 0
+    count_responses = 0
+    while count_responses < NUM_BRIDGES:
+        while retries <= MAX_RETRIES:
+            try:
+                send(sock, data)
+                # TODO: checar se todas as portas recebem resposta.
+                response = receive(sock)
+                #print(response)
+                if(response['ships']):
+                    ships_per_bridge[response['bridge']] = response['ships']
+                count_responses+=1
+                break
+            except (socket.error, socket.timeout) as e:
+                print('In cannon placement:')
+                print(f'Thread {threading.current_thread} failed with error: {e}')
+                retries += 1
+    return ships_per_bridge    
+        
+def quit(sock, auth):
+    data = {'type' : 'quit', 'auth': auth}
+    retries = 0
+    while retries <= MAX_RETRIES:
+        try:
+            send(sock, data)
+            break
+        except (socket.error, socket.timeout) as e:
+            print('In cannon placement:')
+            print(f'Thread {threading.current_thread} failed with error: {e}')
+            retries += 1
 
-def shoot():
+def shoot(my_river):
+    print(my_river)
     pass
 
 def send(sock, data):
