@@ -10,6 +10,7 @@ Constant Definitions
 """
 NUM_RIVERS = 4
 NUM_BRIDGES = 8
+MAX_CANNONS = NUM_BRIDGES * NUM_RIVERS
 TIMEOUT = 0.5
 MAX_RETRIES = 10
 
@@ -24,7 +25,7 @@ for i in range(NUM_RIVERS):
     events[i].clear()
 # C 1 C 2 C 3 C 4 C
 # 1-2 2-3 3-4
-cannon_shot = [False]
+cannon_shot = [False] * MAX_CANNONS
 def play(auth, server_adress):
     try:
         sock = create_socket(server_adress)
@@ -36,23 +37,30 @@ def play(auth, server_adress):
         barrier.wait()
         print('Authenticated')
 
-        cannons = place_cannons(sock, auth) # cannons is not being shared across threads. That has to change.
+        cannons = place_cannons(sock, auth) 
+        # print(f"cannons: {(cannons)}")
         # cannons = Queue.queue(cannons)
         barrier.wait()
         print('Cannons placed')
         turn = 0
-        while True:
-            ships_pre_bridge = pass_turn(sock, auth, turn)
+        gameover = False
+        while not gameover:
+            #print(cannon_shot)
+            gameover, ships_pre_bridge = pass_turn(sock, auth, turn)
+            if gameover:
+                break
             barrier.wait()
             events[0].set()
             events[my_river-1].wait()
-            print(f"river: {my_river} : {cannons}")
+            if my_river == 1: # thread 1 is responsible for reseting cannon_shot each round
+                for i in range(len(cannon_shot)):
+                    cannon_shot[i] = False
             shoot(sock, auth, my_river, ships_pre_bridge, cannons)
             events[my_river-1].clear()
             if(my_river != NUM_RIVERS):
                 events[my_river].set()
-            break
-        barrier.wait()
+            turn+=1
+            barrier.wait()
         if(my_river == 1): # thread 1 is responsible for quitting the game
             quit(sock, auth)
         """ locks[my_river - 1].lock()
@@ -130,6 +138,9 @@ def pass_turn(sock, auth, turn):
                 # TODO: checar se todas as portas recebem resposta.
                 response = receive(sock)
                 # print(response)
+                if(response['type'] == "gameover"):
+                    print(response['score'])
+                    return True, {}
                 if(response['ships']):
                     ships_per_bridge[response['bridge']] = response['ships']
                 count_responses+=1
@@ -138,7 +149,7 @@ def pass_turn(sock, auth, turn):
                 print('In cannon placement:')
                 print(f'Thread {threading.current_thread} failed with error: {e}')
                 retries += 1
-    return ships_per_bridge    
+    return False, ships_per_bridge    
         
 def quit(sock, auth):
     data = {'type' : 'quit', 'auth': auth}
@@ -173,10 +184,11 @@ def shoot(sock, auth, river, ships_per_pridge, cannons):
  
     for bridge in ships_per_pridge:
         for i in range(len(cannons)):
+            if(cannon_shot[i]):
+                continue
             if(cannons[i][0] == bridge and (cannons[i][1] == river or cannons[i][1] == river - 1)):
-                print(f"river: {river} idx cannon: {i}")
                 send_shot(cannons[i], ships_per_pridge[bridge][0]['id']) # shoots firts element
-                cannons.pop(i)
+                cannon_shot[i] = True
                 break
             pass
 
