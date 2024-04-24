@@ -157,12 +157,22 @@ def shoot(sock, auth, river, ships_per_pridge, cannons):
         while retries <= MAX_RETRIES:
             try:
                 send(sock, data)
+                # break
+            except (socket.error, socket.timeout) as e:
+                print('In quit:')
+                print(f'Thread {threading.current_thread} failed with error: {e}')
+                retries+=1
+                continue
+                
+            try:
+                response = receive(sock)
                 break
             except (socket.error, socket.timeout) as e:
                 print('In quit:')
                 print(f'Thread {threading.current_thread} failed with error: {e}')
-            retries += 1
-        response = receive(sock)
+                retries+=1
+
+
         if(response['status'] != 0):
             print(f"Shot error (cannon: {cannon}): {response['description']}")
         else:

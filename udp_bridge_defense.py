@@ -10,7 +10,7 @@ Constant Definitions.
 """
 NUM_RIVERS = 4
 NUM_BRIDGES = 8
-MAX_RETRIES = 3
+MAX_RETRIES = 100000000000
 TIMEOUT = 0.5
 INVALID_MESSAGE = 23
 
@@ -252,7 +252,7 @@ def main():
             try:
                 river_control = authenticate_connection(sockets, gas)#Aparentemente funciona corretamente
                 print("\nAuthenticated Connections\n")
-                print(river_control) # 
+                print(river_control)
                 cannon_placement = request_cannon_placement(sockets, gas)#Aparentemente funciona corretamente
                 print("\nGot Cannon Placement\n")
                 print(cannon_placement)
