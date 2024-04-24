@@ -12,6 +12,7 @@ NUM_RIVERS = 4
 NUM_BRIDGES = 8
 MAX_CANNONS = NUM_BRIDGES * NUM_RIVERS
 TIMEOUT = 3.0
+TIMEOUT = 3.0
 MAX_RETRIES = float('inf')
 
 barrier = threading.Barrier(NUM_RIVERS)
@@ -132,6 +133,7 @@ def pass_turn(sock, auth, turn):
                     ships_per_bridge[response['bridge']] = response['ships']
                 break
             except (socket.error, socket.timeout) as e:
+                print('In turn:')
                 print('In turn:')
                 print(f'Thread {threading.current_thread} failed with error: {e}')
                 retries += 1
