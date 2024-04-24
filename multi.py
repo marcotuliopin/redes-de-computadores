@@ -11,20 +11,17 @@ Constant Definitions
 NUM_RIVERS = 4
 NUM_BRIDGES = 8
 MAX_CANNONS = NUM_BRIDGES * NUM_RIVERS
-TIMEOUT = 0.5
-MAX_RETRIES = 10
+TIMEOUT = 5
+MAX_RETRIES = float('inf')
 
 barrier = threading.Barrier(NUM_RIVERS)
 
-locks = []
-for i in range(NUM_RIVERS):
-    locks.append(threading.Lock())
-events = []
+events = [threading.Event() for i in range(NUM_RIVERS)]
+
 for i in range(NUM_RIVERS):
     events.append(threading.Event())
     events[i].clear()
-# C 1 C 2 C 3 C 4 C
-# 1-2 2-3 3-4
+
 cannon_shot = [False] * MAX_CANNONS
 def play(auth, server_adress):
     try:
@@ -38,23 +35,24 @@ def play(auth, server_adress):
         print('Authenticated')
 
         cannons = place_cannons(sock, auth) 
-        # print(f"cannons: {(cannons)}")
-        # cannons = Queue.queue(cannons)
         barrier.wait()
         print('Cannons placed')
+
         turn = 0
         gameover = False
         while not gameover:
-            #print(cannon_shot)
             gameover, ships_pre_bridge = pass_turn(sock, auth, turn)
             if gameover:
                 break
             barrier.wait()
+
+            # TODO: mudar para Lock
             events[0].set()
             events[my_river-1].wait()
             if my_river == 1: # thread 1 is responsible for reseting cannon_shot each round
                 for i in range(len(cannon_shot)):
                     cannon_shot[i] = False
+            # TODO: paralelizar envio da mensagem
             shoot(sock, auth, my_river, ships_pre_bridge, cannons)
             events[my_river-1].clear()
             if(my_river != NUM_RIVERS):
@@ -63,14 +61,6 @@ def play(auth, server_adress):
             barrier.wait()
         if(my_river == 1): # thread 1 is responsible for quitting the game
             quit(sock, auth)
-        """ locks[my_river - 1].lock()
-        locks[my_river + 1].lock()
-        try:
-            pass
-        finally:
-            locks[my_river - 1].unlock()
-            locks[my_river + 1].unlock()
-        break """
     finally:
         sock.close()
 
@@ -131,19 +121,15 @@ def pass_turn(sock, auth, turn):
     send(sock, data)
     ships_per_bridge = {}
     retries = 0
-    count_responses = 0
-    while count_responses < NUM_BRIDGES:
+    for _ in range(NUM_BRIDGES):
         while retries <= MAX_RETRIES:
             try:
-                # TODO: checar se todas as portas recebem resposta.
                 response = receive(sock)
-                # print(response)
                 if(response['type'] == "gameover"):
                     print(response['score'])
                     return True, {}
-                if(response['ships']):
+                if(response['ships']): #TODO: checar se precisa
                     ships_per_bridge[response['bridge']] = response['ships']
-                count_responses+=1
                 break
             except (socket.error, socket.timeout) as e:
                 print('In cannon placement:')
@@ -166,6 +152,7 @@ def quit(sock, auth):
 def shoot(sock, auth, river, ships_per_pridge, cannons):
     def send_shot(cannon, ship_id):
         data = {"type": "shot", "auth": auth, "cannon": cannon, "id": ship_id}
+
         retries = 0
         while retries <= MAX_RETRIES:
             try:
@@ -186,6 +173,7 @@ def shoot(sock, auth, river, ships_per_pridge, cannons):
         for i in range(len(cannons)):
             if(cannon_shot[i]):
                 continue
+            # TODO: trocar para dict
             if(cannons[i][0] == bridge and (cannons[i][1] == river or cannons[i][1] == river - 1)):
                 send_shot(cannons[i], ships_per_pridge[bridge][0]['id']) # shoots firts element
                 cannon_shot[i] = True
@@ -207,10 +195,6 @@ def receive(sock):
 def main():
 
     _, host, port1, auth = argv
-
-    """ parts = auth.split(':', 1)
-    padded_part = parts[0].ljust(12)
-    auth = ':'.join([padded_part, parts[1]]) """
 
     port1 = int(port1) 
     ports = range(port1, port1 + NUM_RIVERS)
@@ -240,7 +224,6 @@ class CommunicationErrorException(Exception):
 class InvalidMessageException(Exception):
     def __init__(self, message):
         super().__init__(message)
-
 
 if __name__ == '__main__':
     main()
