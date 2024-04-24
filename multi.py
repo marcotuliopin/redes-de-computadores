@@ -11,7 +11,7 @@ Constant Definitions
 NUM_RIVERS = 4
 NUM_BRIDGES = 8
 MAX_CANNONS = NUM_BRIDGES * NUM_RIVERS
-TIMEOUT = 5
+TIMEOUT = 3.0
 MAX_RETRIES = float('inf')
 
 barrier = threading.Barrier(NUM_RIVERS)
@@ -132,7 +132,7 @@ def pass_turn(sock, auth, turn):
                     ships_per_bridge[response['bridge']] = response['ships']
                 break
             except (socket.error, socket.timeout) as e:
-                print('In cannon placement:')
+                print('In turn:')
                 print(f'Thread {threading.current_thread} failed with error: {e}')
                 retries += 1
     return False, ships_per_bridge    
@@ -159,7 +159,7 @@ def shoot(sock, auth, river, ships_per_pridge, cannons):
                 send(sock, data)
                 # break
             except (socket.error, socket.timeout) as e:
-                print('In quit:')
+                print('In shoot:')
                 print(f'Thread {threading.current_thread} failed with error: {e}')
                 retries+=1
                 continue
@@ -168,7 +168,7 @@ def shoot(sock, auth, river, ships_per_pridge, cannons):
                 response = receive(sock)
                 break
             except (socket.error, socket.timeout) as e:
-                print('In quit:')
+                print('In shoot:')
                 print(f'Thread {threading.current_thread} failed with error: {e}')
                 retries+=1
 
