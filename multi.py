@@ -23,6 +23,7 @@ for i in range(NUM_RIVERS):
     events[i].clear()
 
 cannon_shot = [False] * MAX_CANNONS
+
 def play(auth, server_adress):
     try:
         sock = create_socket(server_adress)
@@ -150,35 +151,34 @@ def quit(sock, auth):
             retries += 1
 
 def shoot(sock, auth, river, ships_per_pridge, cannons):
-    def send_shot(cannon, ship_id):
-        data = {"type": "shot", "auth": auth, "cannon": cannon, "id": ship_id}
-
-        retries = 0
-        while retries <= MAX_RETRIES:
-            try:
-                send(sock, data)
-                break
-            except (socket.error, socket.timeout) as e:
-                print('In shoot')
-                print(f'Thread {threading.current_thread} failed with error: {e}')
-            retries += 1
-        response = receive(sock)
-        if(response['status'] != 0):
-            print(f"Shot error (cannon: {cannon}): {response['description']}")
-        else:
-            print(f"{cannon} shot {ship_id}")
-    
- 
     for bridge in ships_per_pridge:
         for i in range(len(cannons)):
             if(cannon_shot[i]):
                 continue
             # TODO: trocar para dict
-            if(cannons[i][0] == bridge and (cannons[i][1] == river or cannons[i][1] == river - 1)):
-                send_shot(cannons[i], ships_per_pridge[bridge][0]['id']) # shoots firts element
+            if cannons[i][0] == bridge and (cannons[i][1] == river or cannons[i][1] == river - 1):
+                send_shot(cannons[i], ships_per_pridge[bridge][0]['id'], auth, sock) # shoots firts element
                 cannon_shot[i] = True
                 break
             pass
+
+def send_shot(cannon, ship_id, auth, sock):
+    data = {"type": "shot", "auth": auth, "cannon": cannon, "id": ship_id}
+
+    retries = 0
+    while retries <= MAX_RETRIES:
+        try:
+            send(sock, data)
+            break
+        except (socket.error, socket.timeout) as e:
+            print('In shoot')
+            print(f'Thread {threading.current_thread} failed with error: {e}')
+        retries += 1
+    response = receive(sock)
+    if(response['status'] != 0):
+        print(f"Shot error (cannon: {cannon}): {response['description']}")
+    else:
+        print(f"{cannon} shot {ship_id}")
 
 def send(sock, data):
     message = json.dumps(data).encode('utf-8')
