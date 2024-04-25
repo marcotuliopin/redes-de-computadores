@@ -11,7 +11,7 @@ Constant Definitions
 NUM_RIVERS = 4
 NUM_BRIDGES = 8
 NUM_CANNONS = NUM_BRIDGES * NUM_RIVERS
-TIMEOUT = 1.0
+TIMEOUT = 0.1
 MAX_RETRIES = float('inf')
 
 barrier = threading.Barrier(NUM_RIVERS)
@@ -65,6 +65,7 @@ def play(auth, server_adress):
 
             turn += 1
             flag = False
+        barrier.wait()
         if (river == 1):
             quit(sock, auth)
     finally:
