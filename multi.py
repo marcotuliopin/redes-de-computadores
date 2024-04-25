@@ -4,6 +4,7 @@ import json
 import multiprocessing
 from sys import argv
 from collections import deque
+import time
 
 """
 Constant Definitions
@@ -250,6 +251,8 @@ class CommunicationErrorException(Exception):
 class InvalidMessageException(Exception):
     def __init__(self, message):
         super().__init__(message)
-
+start=time.time()
 if __name__ == '__main__':
     main()
+stop=time.time()
+print("Tempo total de execução: ",start-stop)
