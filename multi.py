@@ -18,12 +18,6 @@ barrier = threading.Barrier(NUM_RIVERS)
 lock = threading.Lock()
 flag = False
 
-events = [threading.Event() for i in range(NUM_RIVERS)]
-
-for i in range(NUM_RIVERS):
-    events.append(threading.Event())
-    events[i].clear()
-
 cannon_shot = [False] * NUM_CANNONS
 
 def play(auth, server_adress):
@@ -37,11 +31,9 @@ def play(auth, server_adress):
         if status:
             raise AuthenticationFailedException
         barrier.wait()
-        print('Authenticated')
 
         cannons = place_cannons(sock, auth) 
         barrier.wait()
-        print('Cannons placed')
 
         turn = 0
         gameover = False
@@ -65,22 +57,20 @@ def play(auth, server_adress):
 
             turn += 1
             flag = False
+        barrier.wait()
         if (river == 1):
             quit(sock, auth)
     finally:
         sock.close()
 
 def create_socket(server_adress):
-    # Try to connect to IPv6
     try:
         sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
         sock.connect(server_adress)
-    # Try connecting to IPv4 if the connection in IPv6 is not successful
     except socket.error as e:
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.connect(server_adress)
     sock.settimeout(TIMEOUT)
-    print("Connected!")
     return sock
 
 def authenticate(sock, auth):
@@ -96,8 +86,6 @@ def authenticate(sock, auth):
             response = receive(sock)
             break
         except (socket.error, socket.timeout) as e:
-            print('In authentication:')
-            print(f'Thread {threading.current_thread} failed with error: {e}')
             retries += 1
 
     if retries > MAX_RETRIES:
@@ -118,8 +106,6 @@ def place_cannons(sock, auth):
             response = receive(sock)
             break
         except (socket.error, socket.timeout) as e:
-            print('In cannon placement:')
-            print(f'Thread {threading.current_thread} failed with error: {e}')
             retries += 1
     if retries > MAX_RETRIES:
         raise CommunicationErrorException
@@ -153,8 +139,6 @@ def pass_turn(sock, auth, turn):
                     ships[response['bridge']] = response['ships']
             break
         except (socket.error, socket.timeout) as e:
-            print('In turn:')
-            print(f'Thread {threading.current_thread} failed with error: {e}')
             retries += 1
     return False, ships    
         
@@ -169,8 +153,6 @@ def quit(sock, auth):
             send(sock, data)
             break
         except (socket.error, socket.timeout) as e:
-            print('In quit:')
-            print(f'Thread {threading.current_thread} failed with error: {e}')
             retries += 1
 
 def shoot(river, ships, cannons):
@@ -223,13 +205,7 @@ def send_shot(cannon, ship, auth, sock):
             response = receive(sock)
             break
         except (socket.error, socket.timeout) as e:
-            print('In shoot')
-            print(f'Thread {threading.current_thread} failed with error: {e}')
             retries += 1
-    if(response['status'] != 0):
-        print(f"Shot error (cannon: {cannon}): {response['description']}")
-    else:
-        print(f"Cannon {cannon} shot ship {ship}!")
 
 def send(sock, data):
     message = json.dumps(data).encode('utf-8')
