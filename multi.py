@@ -12,7 +12,7 @@ Constant Definitions
 NUM_RIVERS = 4
 NUM_BRIDGES = 8
 NUM_CANNONS = NUM_BRIDGES * NUM_RIVERS
-TIMEOUT = 1.0
+TIMEOUT = 0.1
 MAX_RETRIES = float('inf')
 
 barrier = threading.Barrier(NUM_RIVERS)
@@ -136,6 +136,7 @@ def pass_turn(sock, auth, turn):
                 if(response['type'] == "gameover"):
                     print(response['score'])
                     return True, {}
+                print(response)
                 if(response['ships']):
                     ships[response['bridge']] = response['ships']
             break
