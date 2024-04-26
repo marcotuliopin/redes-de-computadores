@@ -1,9 +1,8 @@
 import socket
 import threading
 import json
-import multiprocessing
 from sys import argv
-from collections import deque
+from time import time
 
 """
 Constant Definitions
@@ -17,7 +16,6 @@ MAX_RETRIES = float('inf')
 barrier = threading.Barrier(NUM_RIVERS)
 lock = threading.Lock()
 flag = False
-
 cannon_shot = [False] * NUM_CANNONS
 
 def play(auth, server_adress):
@@ -36,9 +34,8 @@ def play(auth, server_adress):
         barrier.wait()
 
         turn = 0
-        gameover = False
-        while not gameover:
-            gameover, ships = pass_turn(sock, auth, turn)
+        while True:
+            ships, gameover, score = pass_turn(sock, auth, turn)
             if gameover:
                 break
             barrier.wait()
@@ -52,13 +49,14 @@ def play(auth, server_adress):
 
             for shot in shots:
                 send_shot(shot[0], shot[1], auth, sock) 
-
             barrier.wait()
 
             turn += 1
             flag = False
         barrier.wait()
+
         if (river == 1):
+            print(score)
             quit(sock, auth)
     finally:
         sock.close()
@@ -133,20 +131,20 @@ def pass_turn(sock, auth, turn):
             for _ in range(NUM_BRIDGES):
                 response = receive(sock)
                 if(response['type'] == "gameover"):
-                    print(response['score'])
-                    return True, {}
+                    return {}, True, response['score']
                 if(response['ships']):
                     ships[response['bridge']] = response['ships']
             break
         except (socket.error, socket.timeout) as e:
             retries += 1
-    return False, ships    
+    return ships, False, None
         
 def quit(sock, auth):
     data = {
         'type' : 'quit', 
         'auth': auth
     }
+
     retries = 0
     while retries <= MAX_RETRIES:
         try:
@@ -252,4 +250,7 @@ class InvalidMessageException(Exception):
         super().__init__(message)
 
 if __name__ == '__main__':
+    start = time()
     main()
+    minutes, seconds = divmod(int(time() - start), 60)
+    print(f'Runtime: {minutes:02d}:{seconds:02d}')
