@@ -10,7 +10,7 @@ Constant Definitions
 NUM_RIVERS = 4
 NUM_BRIDGES = 8
 NUM_CANNONS = NUM_BRIDGES * NUM_RIVERS
-TIMEOUT = 1.0
+TIMEOUT = 0.1
 MAX_RETRIES = float('inf')
 
 barrier = threading.Barrier(NUM_RIVERS)
@@ -369,7 +369,7 @@ class CommunicationErrorException(Exception):
 class InvalidMessageException(Exception):
     def __init__(self, message):
         super().__init__(message)
-
+start=time.time()
 if __name__ == '__main__':
     start = time()
     main()
