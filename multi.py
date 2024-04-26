@@ -369,7 +369,7 @@ class CommunicationErrorException(Exception):
 class InvalidMessageException(Exception):
     def __init__(self, message):
         super().__init__(message)
-start=time.time()
+
 if __name__ == '__main__':
     start = time()
     main()
