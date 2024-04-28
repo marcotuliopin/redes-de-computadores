@@ -3,7 +3,6 @@ import threading
 import json
 from sys import argv
 from time import time
-from select import select
 
 """
 Constant Definitions
