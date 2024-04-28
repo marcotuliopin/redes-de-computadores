@@ -62,7 +62,6 @@ def play(auth, server_adress):
             barrier.wait()
 
             turn += 1
-            print("Turno ",turn)
             flag = False
         barrier.wait()
 
@@ -183,22 +182,14 @@ def pass_turn(sock, auth, turn):
     retries = 0
     while retries <= MAX_RETRIES:
         try:
-            responses=[]
             send(sock, data)
             for _ in range(NUM_BRIDGES):
                 response = receive(sock)
-                if(response['type']!='state'):
-                    print(response['type'])
-                
                 if(response['type'] == "gameover"):
                     return {}, True, response['score']
-                if(response['type']=='state'):
-                    responses.append(response)
-                    #ships[response['bridge']] = response['ships']
-            if(len(responses)==NUM_BRIDGES):
-                for i in range(NUM_BRIDGES):
-                    ships[responses[i]['bridge']] = responses[i]['ships']
-                break
+                if(response['ships']):
+                    ships[response['bridge']] = response['ships']
+            break
         except (socket.error, socket.timeout) as e:
             retries += 1
     return ships, False, None
