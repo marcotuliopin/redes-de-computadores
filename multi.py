@@ -10,7 +10,7 @@ Constant Definitions
 NUM_RIVERS = 4
 NUM_BRIDGES = 8
 NUM_CANNONS = NUM_BRIDGES * NUM_RIVERS
-TIMEOUT = 0.1
+TIMEOUT = .5
 MAX_RETRIES = float('inf')
 
 barrier = threading.Barrier(NUM_RIVERS)
@@ -114,6 +114,8 @@ def authenticate(sock, auth):
         try:
             send(sock, data)
             response = receive(sock)
+            while response['type'] != 'authresp':
+                response = receive(sock)
             break
         except (socket.error, socket.timeout) as e:
             retries += 1
@@ -145,6 +147,8 @@ def place_cannons(sock, auth):
         try:
             send(sock, data)
             response = receive(sock)
+            while response['type'] != 'cannons':
+                response = receive(sock)
             break
         except (socket.error, socket.timeout) as e:
             retries += 1
@@ -313,6 +317,8 @@ def send_shot(cannon, ship, auth, sock):
         try:
             send(sock, data)
             response = receive(sock)
+            while response['type'] != 'shotresp':
+                response = receive(sock)
             break
         except (socket.error, socket.timeout) as e:
             retries += 1
