@@ -3,6 +3,7 @@ import threading
 import json
 from sys import argv
 from time import time
+from select import select
 
 """
 Constant Definitions
@@ -10,7 +11,7 @@ Constant Definitions
 NUM_RIVERS = 4
 NUM_BRIDGES = 8
 NUM_CANNONS = NUM_BRIDGES * NUM_RIVERS
-TIMEOUT = 0.1
+TIMEOUT = 1.0
 MAX_RETRIES = float('inf')
 
 barrier = threading.Barrier(NUM_RIVERS)
@@ -62,6 +63,7 @@ def play(auth, server_adress):
             barrier.wait()
 
             turn += 1
+            print(turn)
             flag = False
         barrier.wait()
 
@@ -113,7 +115,8 @@ def authenticate(sock, auth):
         try:
             send(sock, data)
             response = receive(sock)
-            break
+            if response['type'] == 'authresp':
+                break
         except (socket.error, socket.timeout) as e:
             retries += 1
 
@@ -144,7 +147,8 @@ def place_cannons(sock, auth):
         try:
             send(sock, data)
             response = receive(sock)
-            break
+            if response['type'] == 'cannons':
+                break
         except (socket.error, socket.timeout) as e:
             retries += 1
     if retries > MAX_RETRIES:
@@ -180,18 +184,28 @@ def pass_turn(sock, auth, turn):
 
     ships = {}
     retries = 0
+    is_read = [False for _ in range(NUM_BRIDGES)]
     while retries <= MAX_RETRIES:
         try:
             send(sock, data)
-            for _ in range(NUM_BRIDGES):
+            retransmit = False
+            while False in is_read:
                 response = receive(sock)
-                if(response['type'] == "gameover"):
+                if  response['type'] != 'state':
+                    print(response['type'])
+                if response['type'] == "gameover":
                     return {}, True, response['score']
-                if(response['ships']):
+                if  response['type'] != 'state':
+                    retransmit = True
+                    break
+                if response['ships']:
                     ships[response['bridge']] = response['ships']
-            break
+                is_read[response['bridge'] - 1] = True
+            if not retransmit:
+                break
         except (socket.error, socket.timeout) as e:
             retries += 1
+
     return ships, False, None
         
 def quit(sock, auth):
@@ -304,7 +318,8 @@ def send_shot(cannon, ship, auth, sock):
         try:
             send(sock, data)
             response = receive(sock)
-            break
+            if response['type'] == 'shotresp':
+                break
         except (socket.error, socket.timeout) as e:
             retries += 1
 
