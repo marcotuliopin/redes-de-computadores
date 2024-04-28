@@ -10,7 +10,7 @@ Constant Definitions
 NUM_RIVERS = 4
 NUM_BRIDGES = 8
 NUM_CANNONS = NUM_BRIDGES * NUM_RIVERS
-TIMEOUT = .5
+TIMEOUT = .3
 MAX_RETRIES = float('inf')
 
 barrier = threading.Barrier(NUM_RIVERS)
@@ -187,19 +187,18 @@ def pass_turn(sock, auth, turn):
     retries = 0
     while retries <= MAX_RETRIES:
         try:
-            responses=[]
+            responses = []
             send(sock, data)
             for _ in range(NUM_BRIDGES):
                 response = receive(sock)
-                if(response['type']!='state'):
+                if response['type'] != 'state':
                     print(response['type'])
                 
-                if(response['type'] == "gameover"):
+                if response['type'] == "gameover":
                     return {}, True, response['score']
-                if(response['type']=='state'):
+                if response['type'] == 'state':
                     responses.append(response)
-                    #ships[response['bridge']] = response['ships']
-            if(len(responses)==NUM_BRIDGES):
+            if len(responses) == NUM_BRIDGES:
                 for i in range(NUM_BRIDGES):
                     ships[responses[i]['bridge']] = responses[i]['ships']
                 break
