@@ -119,6 +119,8 @@ def authenticate(sock, auth):
             break
         except (socket.error, socket.timeout) as e:
             retries += 1
+        except InvalidMessageException as e:
+            quit(sock)
 
     if retries > MAX_RETRIES:
         raise CommunicationErrorException
@@ -225,9 +227,11 @@ def quit(sock, auth):
     while retries <= MAX_RETRIES:
         try:
             send(sock, data)
-            break
+            place_cannons(sock, auth) 
         except (socket.error, socket.timeout) as e:
             retries += 1
+        except InvalidMessageException as e:
+            break 
 
 def shoot(river, ships, cannons):
     """
