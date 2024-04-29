@@ -109,6 +109,7 @@ def send_group_token_validation(sock, gas: str):
     # Pack each SAS
     for sas in sas_list:
         id, nonce, sas_token = sas.split(sep=':')
+        id = id.ljust(12)
         aux = struct.pack('!12sI64s', bytes(id, encoding='ascii'), int(nonce),
                           bytes(sas_token, encoding='ascii'))
         message += aux
@@ -270,7 +271,7 @@ def main():
             case 'itv':
                 send_individual_token_validation(sock, *cmd[1:])
                 response = receive_individual_token_status(sock)
-                print(response[-1].replace(' ', '')) # Print validation token
+                print(response[-1]) # Print validation token
             case 'gtr':
                 send_group_token_request(sock, *cmd[1:])
                 response = receive_group_token_response(sock, cmd[1])
@@ -279,7 +280,7 @@ def main():
             case 'gtv':
                 N = send_group_token_validation(sock, *cmd[1:])
                 response = receive_group_token_status(sock, N)
-                print(response[-1].replace(' ', '')) # Print validation token
+                print(response[-1]) # Print validation token
             case _:
                 InvalidCommandException()
     # Ensure sockets are closed

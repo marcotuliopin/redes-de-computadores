@@ -10,7 +10,7 @@ Constant Definitions
 NUM_RIVERS = 4
 NUM_BRIDGES = 8
 NUM_CANNONS = NUM_BRIDGES * NUM_RIVERS
-TIMEOUT = 0.1
+TIMEOUT = .3
 MAX_RETRIES = float('inf')
 
 barrier = threading.Barrier(NUM_RIVERS)
@@ -113,9 +113,13 @@ def authenticate(sock, auth):
         try:
             send(sock, data)
             response = receive(sock)
+            while response['type'] != 'authresp':
+                response = receive(sock)
             break
         except (socket.error, socket.timeout) as e:
             retries += 1
+        except InvalidMessageException as e:
+            quit(sock, auth)
 
     if retries > MAX_RETRIES:
         raise CommunicationErrorException
@@ -144,6 +148,8 @@ def place_cannons(sock, auth):
         try:
             send(sock, data)
             response = receive(sock)
+            while response['type'] != 'cannons':
+                response = receive(sock)
             break
         except (socket.error, socket.timeout) as e:
             retries += 1
@@ -182,14 +188,18 @@ def pass_turn(sock, auth, turn):
     retries = 0
     while retries <= MAX_RETRIES:
         try:
+            responses = []
             send(sock, data)
             for _ in range(NUM_BRIDGES):
                 response = receive(sock)
-                if(response['type'] == "gameover"):
+                if response['type'] == "gameover":
                     return {}, True, response['score']
-                if(response['ships']):
-                    ships[response['bridge']] = response['ships']
-            break
+                if response['type'] == 'state':
+                    responses.append(response)
+            if len(responses) == NUM_BRIDGES:
+                for i in range(NUM_BRIDGES):
+                    ships[responses[i]['bridge']] = responses[i]['ships']
+                break
         except (socket.error, socket.timeout) as e:
             retries += 1
     return ships, False, None
@@ -213,9 +223,11 @@ def quit(sock, auth):
     while retries <= MAX_RETRIES:
         try:
             send(sock, data)
-            break
+            place_cannons(sock, auth) 
         except (socket.error, socket.timeout) as e:
             retries += 1
+        except InvalidMessageException as e:
+            break 
 
 def shoot(river, ships, cannons):
     """
@@ -304,6 +316,8 @@ def send_shot(cannon, ship, auth, sock):
         try:
             send(sock, data)
             response = receive(sock)
+            while response['type'] != 'shotresp':
+                response = receive(sock)
             break
         except (socket.error, socket.timeout) as e:
             retries += 1
