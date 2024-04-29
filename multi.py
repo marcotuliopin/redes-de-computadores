@@ -62,7 +62,6 @@ def play(auth, server_adress):
             barrier.wait()
 
             turn += 1
-            print("Turno ",turn)
             flag = False
         barrier.wait()
 
@@ -120,7 +119,7 @@ def authenticate(sock, auth):
         except (socket.error, socket.timeout) as e:
             retries += 1
         except InvalidMessageException as e:
-            quit(sock)
+            quit(sock, auth)
 
     if retries > MAX_RETRIES:
         raise CommunicationErrorException
@@ -193,9 +192,6 @@ def pass_turn(sock, auth, turn):
             send(sock, data)
             for _ in range(NUM_BRIDGES):
                 response = receive(sock)
-                if response['type'] != 'state':
-                    print(response['type'])
-                
                 if response['type'] == "gameover":
                     return {}, True, response['score']
                 if response['type'] == 'state':
