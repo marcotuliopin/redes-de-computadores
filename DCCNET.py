@@ -10,7 +10,14 @@ class DCCNET:
     def __init__(self,host,port): #gabriel
         self.TIMEOUT= 1
         self.ID=0
+        self.id_counter_rec = 0
         self.SYNC=0xDCC023C2
+        self.SYNC_SIZE = 4
+        self.SYNC_BYTES = self.SYNC.to_bytes(4, 'big')
+        self.CHECKSUM_SIZE = 2
+        self.HEADER_SIZE = 15
+        
+        
         #cria socket para conexao e salva para acesso nas funcoes
         try:
             self.sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
@@ -47,8 +54,27 @@ class DCCNET:
         data=data.decode('ascii')
         return sync1,sync2,checksum,length,id,flag,data
     
-    def receive(): #araju
-        pass
+    def receive(self): #araju
+        
+        sync_count = 0
+        while sync_count < 2:
+            sync = self.sock.recv(self.SYNC_SIZE)
+            if sync == self.SYNC:
+                sync_count += 1
+            else:
+                sync_count = 0
+        
+        header = self.sock.recv(self.HEADER_SIZE - self.SYNC_SIZE)
+        checksum_rec, length_rec, frame_id_rec, flag_rec = struct.unpack('!HHHB', header[:5])
+        if frame_id_rec == self.id_counter_rec: # Recebeu o mesmo id do frame anterior
+            return None, -1
+        data_rec = self.sock.recv(length_rec)
+        frame_wo_checksum = struct.pack(f'!IIHHBB{length_rec}s', self.SYNC, self.SYNC, 0 , length_rec, frame_id_rec, flag_rec, data_rec)
+        if self.checksum(frame_wo_checksum) != checksum_rec:
+            return None,  -1
+        else:
+            self.id_counter_rec ^= 1
+            return data_rec, flag_rec
 
     def send(self, data, flag): #marco
         if len(data) == 0:
@@ -81,7 +107,7 @@ class DCCNET:
         """Calculate the Internet checksum as specified by RFC 1071."""
         if len(data) % 2 == 1:
             data += b'\x00'
-        
+
         checksum = 0
         for i in range(0, len(data), 2):
             word = (data[i] << 8) + data[i + 1]
