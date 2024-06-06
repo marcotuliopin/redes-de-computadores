@@ -1,9 +1,14 @@
 import socket
 import struct
 
+ACK = 1 << 7
+END = 1 << 6
+
+EMPTY_FRAME_ERROR = -1
+
 class DCCNET:
     def __init__(self,host,port): #gabriel
-        self.TIMEOUT=3
+        self.TIMEOUT= 1
         self.ID=0
         self.SYNC=0xDCC023C2
         #cria socket para conexao e salva para acesso nas funcoes
@@ -42,11 +47,35 @@ class DCCNET:
         data=data.decode('ascii')
         return sync1,sync2,checksum,length,id,flag,data
     
-
     def receive(): #araju
         pass
-    def send(): #marco
-        pass
+
+    def send(self, data, flag): #marco
+        if len(data) == 0:
+            if flag != END and flag != ACK:
+                return EMPTY_FRAME_ERROR
+        
+        max_dsize = 2**16
+        max_dsize //= 8
+
+        frames = []
+        for i in range(0, len(data), max_dsize):
+            frames.append(self.pack(data[i: i + max_dsize], flag)) 
+
+        for frame in frames:
+            self.ID ^= 1
+            while True:
+                try:
+                    self.sock.sendall(frame)
+                    _, flag = self.sock.receive()
+                    if flag == ACK:
+                        break
+                except socket.timeout:
+                    pass
+
+
+
+
     
     def checksum(data):
         """Calculate the Internet checksum as specified by RFC 1071."""
