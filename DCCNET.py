@@ -30,11 +30,12 @@ class DCCNET:
     def pack(self,data,flag): #gabriel
 
         # Definindo os campos do frame
-        data=data.encode('ascii')
+        data=data.encode('utf-8')
         length = len(data)
 
         # Empacotar SYNC, ID e Length em big-endian
-        message = struct.pack(f'!IIHHHB{length}s', self.SYNC,self.SYNC, self.checksum(data), length, self.ID,flag,data)
+        aux = struct.pack(f'!IIHHHB{length}s', self.SYNC,self.SYNC, 0, length, self.ID,flag,data)
+        message = struct.pack(f'!IIHHHB{length}s', self.SYNC,self.SYNC, self.checksum(aux), length, self.ID,flag,data)
         return message
     
 
@@ -44,7 +45,7 @@ class DCCNET:
         sync1,sync2,checksum,length,id,flag=struct.unpack_from("!IIHHHB",message,offset)
         offset+=struct.calcsize('!IIHHHB')
         data=struct.unpack_from(f"!{length}s",message,offset)[0]
-        data=data.decode('ascii')
+        data=data.decode('utf-8')
         return sync1,sync2,checksum,length,id,flag,data
     
     def receive(): #araju
