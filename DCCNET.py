@@ -55,8 +55,8 @@ class DCCNET:
         data=data.decode('utf-8')
         return sync1,sync2,checksum,length,id,flag,data
     
-    def receive(self): #araju
-        
+    
+    def recv(self): #araju
         sync_count = 0
         while sync_count < 2:
             sync = self.sock.recv(self.SYNC_SIZE)
@@ -64,7 +64,7 @@ class DCCNET:
                 sync_count += 1
             else:
                 sync_count = 0
-        
+        #add try except para recebimentos
         header = self.sock.recv(self.HEADER_SIZE - self.SYNC_SIZE)
         checksum_rec, length_rec, frame_id_rec, flag_rec = struct.unpack('!HHHB', header[:5])
         if frame_id_rec == self.id_counter_rec: # Recebeu o mesmo id do frame anterior
@@ -75,9 +75,23 @@ class DCCNET:
             return None,  -1
         else:
             self.id_counter_rec ^= 1
-            return data_rec, flag_rec
 
-    def send(self, data, flag): #marco
+        #adicionar o envio da confirmacao
+        #self.sock.sendall(confirmation)
+            return data_rec, flag_rec, frame_id_rec
+
+    def recvall(self):
+            # em loop 
+                #recebe um frame com o recv
+                #data+=data
+                #quando receber um frame com end termina o loop
+            #retorna dado completo
+        
+        #return data
+        pass
+
+
+    def sendall(self, data, flag): #marco
         if len(data) == 0:
             if flag != END and flag != ACK:
                 return EMPTY_FRAME_ERROR
@@ -94,8 +108,11 @@ class DCCNET:
             while True:
                 try:
                     self.sock.sendall(frame)
-                    _, flag = self.sock.receive()
-                    if flag == ACK:
+                    #aqui ta errado
+                    #confirmation = self.sock.receive()
+                    #flag,id=unpack_confirmation()
+                    _,flag,id=self.sock.receive()
+                    if flag == ACK and id==self.ID:
                         break
                 except socket.timeout:
                     pass
@@ -118,3 +135,10 @@ class DCCNET:
             checksum = (checksum & 0xFFFF) + (checksum >> 16)
         
         return ~checksum & 0xFFFF
+    
+
+
+    #sender
+
+    #sendall para enviar o dado
+
