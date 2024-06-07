@@ -9,14 +9,15 @@ EMPTY_FRAME_ERROR = -1
 class DCCNET:
     def __init__(self,host,port): #gabriel
         self.TIMEOUT= 1
-        self.ID=0
-        self.id_counter_rec = 0
+        self.id_counter_send = 0
+        self.id_counter_recv = 1
         self.SYNC=0xDCC023C2
         self.SYNC_SIZE = 4
-        self.SYNC_BYTES = self.SYNC.to_bytes(4, 'big')
         self.CHECKSUM_SIZE = 2
         self.HEADER_SIZE = 15
-        
+        self.FLAG_ACK = 0x80
+        self.FLAG_END = 0x40
+
         
         #cria socket para conexao e salva para acesso nas funcoes
         try:
@@ -42,21 +43,20 @@ class DCCNET:
 
         # Empacotar SYNC, ID e Length em big-endian
         aux = struct.pack(f'!IIHHHB{length}s', self.SYNC,self.SYNC, 0, length, self.ID,flag,data)
-        message = struct.pack(f'!IIHHHB{length}s', self.SYNC,self.SYNC, self.checksum(aux), length, self.ID,flag,data)
-        return message
+        frame = struct.pack(f'!IIHHHB{length}s', self.SYNC,self.SYNC, self.checksum(aux), length, self.ID,flag,data)
+        return frame
     
 
     #to retornando a data como string e deixando a identificação e tratamento de erros para fora da função
-    def unpack(self,message): #gabriel
+    def unpack(self, frame): #gabriel
         offset=0
-        sync1,sync2,checksum,length,id,flag=struct.unpack_from("!IIHHHB",message,offset)
+        sync1,sync2,checksum,length,id,flag=struct.unpack_from("!IIHHHB",frame,offset)
         offset+=struct.calcsize('!IIHHHB')
-        data=struct.unpack_from(f"!{length}s",message,offset)[0]
+        data=struct.unpack_from(f"!{length}s",frame,offset)[0]
         data=data.decode('utf-8')
         return sync1,sync2,checksum,length,id,flag,data
-    
-    
-    def recv(self): #araju
+         
+    def recv_frame(self): #araju
         sync_count = 0
         while sync_count < 2:
             sync = self.sock.recv(self.SYNC_SIZE)
@@ -66,21 +66,26 @@ class DCCNET:
                 sync_count = 0
         #add try except para recebimentos
         header = self.sock.recv(self.HEADER_SIZE - self.SYNC_SIZE)
-        checksum_rec, length_rec, frame_id_rec, flag_rec = struct.unpack('!HHHB', header[:5])
-        if frame_id_rec == self.id_counter_rec: # Recebeu o mesmo id do frame anterior
-            return None, -1
+        checksum_rec, length_rec, id_rec, flag_rec = struct.unpack('!HHHB', header[:5])
         data_rec = self.sock.recv(length_rec)
-        frame_wo_checksum = struct.pack(f'!IIHHBB{length_rec}s', self.SYNC, self.SYNC, 0 , length_rec, frame_id_rec, flag_rec, data_rec)
+        frame_wo_checksum = struct.pack(f'!IIHHBB{length_rec}s', self.SYNC, self.SYNC, 0 , length_rec, id_rec, flag_rec, data_rec)
         if self.checksum(frame_wo_checksum) != checksum_rec:
             return None,  -1
-        else:
-            self.id_counter_rec ^= 1
-
-        #adicionar o envio da confirmacao
-        #self.sock.sendall(confirmation)
-            return data_rec, flag_rec, frame_id_rec
+        return data_rec, flag_rec, id_rec
 
     def recvall(self):
+        dataall = "".encode('utf-8')
+        while True:
+            while True:
+                data_rec, flag_rec, id_rec = self.recv_frame()
+                if(flag_rec == self.FLAG_ACK): # Nunca é pra entrar aqui
+                    raise "recvall recebeu ACK"
+                if(id_rec != self.id_counter_recv): # Recebendo o frame certo
+                    dataall += data_rec
+                    break
+            if(flag_rec == self.FLAG_END):
+                break
+        return dataall
             # em loop 
                 #recebe um frame com o recv
                 #data+=data
@@ -88,39 +93,33 @@ class DCCNET:
             #retorna dado completo
         
         #return data
-        pass
 
+    def send_frame(self, data, flag):
+        frame = self.pack(data, flag)
+        self.sock.sendall(frame)
+        
 
-    def sendall(self, data, flag): #marco
-        if len(data) == 0:
-            if flag != END and flag != ACK:
-                return EMPTY_FRAME_ERROR
+    def sendall(self, dataall): #marco
         
         max_dsize = 2**16
         max_dsize //= 8
 
-        frames = []
-        for i in range(0, len(data), max_dsize):
-            frames.append(self.pack(data[i: i + max_dsize], flag)) 
-
-        for frame in frames:
-            self.ID ^= 1
+        for i in range(0, len(dataall), max_dsize):
+            data = dataall[i: i + max_dsize]
+            flag = 0x00
+            if(i + max_dsize >= len(dataall)): # ultimo frame
+                flag = self.FLAG_END 
             while True:
                 try:
-                    self.sock.sendall(frame)
-                    #aqui ta errado
-                    #confirmation = self.sock.receive()
-                    #flag,id=unpack_confirmation()
-                    _,flag,id=self.sock.receive()
-                    if flag == ACK and id==self.ID:
+                    self.send_frame(data, flag)
+                    _, flag_rec, id_rec = self.receive_frame()
+                    if(flag_rec == self.FLAG_ACK and id_rec != self.id_counter_recv): # recebeu ack do frame certo
+                        self.id_counter_recv = id_rec
                         break
                 except socket.timeout:
                     pass
-
-
-
-
     
+
     def checksum(data):
         """Calculate the Internet checksum as specified by RFC 1071."""
         if len(data) % 2 == 1:
