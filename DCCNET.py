@@ -69,7 +69,7 @@ class DCCNET:
                 data_rec, flag_rec, id_rec = self.recv_frame()
                 if flag_rec == self.FLAG_ACK:
                     raise self.invalid_flag
-                if id_rec != self.id_recv: # Recebendo o frame certo
+                if id_rec != self.id_recv:
                     dataall += data_rec
                     break
             if flag_rec == self.FLAG_END:
@@ -108,15 +108,12 @@ class DCCNET:
         """Calculate the Internet checksum as specified by RFC 1071."""
         if len(data) % 2 == 1:
             data += b'\x00'
-
         checksum = 0
         for i in range(0, len(data), 2):
             word = (data[i] << 8) + data[i + 1]
             checksum += word
-        
         while (checksum >> 16) > 0:
             checksum = (checksum & 0xFFFF) + (checksum >> 16)
-        
         return ~checksum & 0xFFFF
 
 class InvalidFlag(Exception):
