@@ -29,7 +29,7 @@ class DCCNET:
         self.last_checksum = 0
 
     def pack(self, data, flag):
-        data = data.encode('ascii')
+        data = data.encode('utf-8')
         length = len(data)
         aux = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, 0, length, self.id_send, flag, data)
 
@@ -41,7 +41,7 @@ class DCCNET:
         _, _, checksum, length, id, flag = struct.unpack_from("!IIHHHB", frame, offset)
         offset += struct.calcsize('!IIHHHB')
         data = struct.unpack_from(f"!{length}s", frame, offset)[0]
-        data = data.decode('ascii')
+        data = data.decode('utf-8')
         return checksum, length, id, flag, data
          
     def recv_frame(self):
@@ -105,7 +105,7 @@ class DCCNET:
                     pass
     
 
-    def checksum(data):
+    def checksum(self, data):
         """Calculate the Internet checksum as specified by RFC 1071."""
         if len(data) % 2 == 1:
             data += b'\x00'

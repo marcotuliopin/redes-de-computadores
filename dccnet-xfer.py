@@ -12,7 +12,7 @@ def comm(dccnet: DCCNET, sock, input, output):
 
     fsize = 2**16
     fsize //= 8
-    frames = [buffer[i: i + fsize] for i in range(len(0, buffer, fsize))]
+    frames = [buffer[i: i + fsize] for i in range(0, len(buffer), fsize)]
 
     for i in range(len(frames)):
         frame = frames[i]
@@ -71,28 +71,40 @@ def recv_file(dccnet: DCCNET, flag, data, checksum, output, has_finished_receivi
 def main():
     _, mode, *params = sys.argv
     dccnet = DCCNET()
+    print(mode)
+    print(params)
 
     if mode == '-s':
+        port, input, output = params
         sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
         sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
 
-        port = 12345
-        sock.bind(('::', port))
+        sock.bind(('::1', int(port)))
         sock.listen(5)
 
         while True:
+            print('Listening...')
             c, addr = sock.accept()
-            threading.Thread(target=comm, args=(dccnet, c, input, output)).start()
+            print(addr)
+            
+            comm(dccnet, c, input, output)
+            c.close()
+            # threading.Thread(target=comm, args=(dccnet, c, input, output)).start()
 
     else:
         host, input, output = params
         ip, port = host.split(sep=':')
+        print(port)
+        print(ip)
 
         try:
             sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-            sock.connect((ip,port))
+            sock.connect((ip, int(port)))
         except socket.error:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            sock.connect((ip,port))
+            sock.connect((ip, int(port)))
         sock.settimeout(1)
         comm(dccnet, sock, input, output)
+
+if __name__ == '__main__':
+    main()
