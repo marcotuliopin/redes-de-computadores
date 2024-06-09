@@ -12,9 +12,9 @@ def receive_file(receiver, output):
 
 def comm(dccnet: DCCNET, input, output):
     has_finished_receiving = False
-    f = open(input, 'r')
+    input_file = open(input, 'r')
 
-    lines = f.readlines()
+    lines = input_file.readlines()
     for line in lines:
         fsize = 2**16
         fsize //= 8
@@ -51,9 +51,33 @@ def comm(dccnet: DCCNET, input, output):
                     
                     elif id == dccnet.ID_RESET and flag == dccnet.FLAG_RESET:
                         dccnet.sock.close()
-    
-    f.close()
-    pass
+                        return
+    input_file.close()
+
+    while not has_finished_receiving:
+        data, flag, id, checksum = dccnet.recv_frame()
+
+        if flag & dccnet.FLAG_END:
+            has_finished_receiving = True
+        elif not data:
+            raise dccnet.invalid_payload
+        
+        if id != dccnet.id_recv:
+            if data:
+                with open(output, 'w') as out:
+                    out.write(data)
+            dccnet.send_frame(data=None, flag=dccnet.FLAG_ACK)
+            dccnet.id_recv ^= 1
+
+        elif id == dccnet.id_recv and checksum == dccnet.last_checksum:
+            dccnet.send_frame(data=None, flag=dccnet.FLAG_ACK)
+        
+        elif id == dccnet.ID_RESET and flag == dccnet.FLAG_RESET:
+            dccnet.sock.close()
+            return
+
+    dccnet.sock.close()
+        
 
 def main():
     _, mode, *params = sys.argv
@@ -61,7 +85,17 @@ def main():
     receiver = DCCNET()
 
     if mode == '-s':
-        pass
+        s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+        s.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
+
+        port = 12345
+        s.bind(('::', port))
+        s.listen(5)
+
+        while True:
+            c, addr = s.accept()
+            c.close()
+
     else:
         host, input, output = params
         ip, port = host.split(sep=':')

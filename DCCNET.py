@@ -5,8 +5,8 @@ from typing import Optional
 class DCCNET:
     def __init__(self, sock: Optional[socket.socket] =None):
         # Constants
-        self.TIMEOUT= 1
-        self.SYNC=0xDCC023C2
+        self.TIMEOUT = 1
+        self.SYNC = 0xDCC023C2
         self.SYNC_SIZE = 4
         self.CHECKSUM_SIZE = 2
         self.HEADER_SIZE = 15
