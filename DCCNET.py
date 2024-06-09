@@ -40,7 +40,7 @@ class DCCNET:
         _, _, checksum, length, id, flag = struct.unpack_from("!IIHHHB", frame, offset)
         offset += struct.calcsize('!IIHHHB')
         data = struct.unpack_from(f"!{length}s", frame, offset)[0]
-        data = data.decode('utf-8')
+        data = data.decode('ascii')
         return checksum, length, id, flag, data
          
     def recv_frame(self):
