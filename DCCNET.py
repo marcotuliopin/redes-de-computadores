@@ -2,10 +2,9 @@ import socket
 import struct
 
 class DCCNET:
-    def __init__(self,host,port):
+    def __init__(self, sock=None):
+        # Constants
         self.TIMEOUT= 1
-        self.id_send = 0
-        self.id_recv = 1
         self.SYNC=0xDCC023C2
         self.SYNC_SIZE = 4
         self.CHECKSUM_SIZE = 2
@@ -13,28 +12,19 @@ class DCCNET:
         self.FLAG_ACK = 0x80
         self.FLAG_END = 0x40
         self.FLAG_EMPTY = 0x00
+
+        # Exceptions
         self.wrong_flag = WrongFlag()
         self.corrupted_frame = CorruptedFrame()
-        
-        try:
-            self.sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-            self.sock.connect((host,port))
-        except socket.error as e:
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.sock.connect((host,port))
-        self.sock.settimeout(self.TIMEOUT)
 
-    
-    #quando o dado tiver mais de 2^16 bits dividimos em dois frames
-    #quando confirmar recebimento trocar o id
+        # Implementation Variables
+        self.sock = sock
+        self.id_send = 0
+        self.id_recv = 1
 
-    #flag no geral sera enviada como zero mas quando for o ultimo frame de dado sera 6
-
-    #to assumindo que a data vai ser mandada como uma string, caso a gnt passe direto como bytes é so tirar a linha com encode 
     def pack(self,data,flag):
-
         # Definindo os campos do frame
-        data=data.encode('utf-8')
+        data=data.encode('ascii')
         length = len(data)
 
         # Empacotar SYNC, ID e Length em big-endian
@@ -42,7 +32,6 @@ class DCCNET:
         frame = struct.pack(f'!IIHHHB{length}s', self.SYNC,self.SYNC, self.checksum(aux), length, self.ID,flag,data)
         return frame
     
-
     def unpack(self, frame):
         offset=0
         sync1,sync2,checksum,length,id,flag=struct.unpack_from("!IIHHHB",frame,offset)
