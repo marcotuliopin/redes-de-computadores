@@ -1,13 +1,8 @@
 import socket
 import struct
 
-ACK = 1 << 7
-END = 1 << 6
-
-EMPTY_FRAME_ERROR = -1
-
 class DCCNET:
-    def __init__(self,host,port): #gabriel
+    def __init__(self,host,port):
         self.TIMEOUT= 1
         self.id_counter_send = 0
         self.id_counter_recv = 1
@@ -17,9 +12,8 @@ class DCCNET:
         self.HEADER_SIZE = 15
         self.FLAG_ACK = 0x80
         self.FLAG_END = 0x40
-
+        self.FLAG_EMPTY = 0x00
         
-        #cria socket para conexao e salva para acesso nas funcoes
         try:
             self.sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
             self.sock.connect((host,port))
@@ -35,7 +29,7 @@ class DCCNET:
     #flag no geral sera enviada como zero mas quando for o ultimo frame de dado sera 6
 
     #to assumindo que a data vai ser mandada como uma string, caso a gnt passe direto como bytes é so tirar a linha com encode 
-    def pack(self,data,flag): #gabriel
+    def pack(self,data,flag):
 
         # Definindo os campos do frame
         data=data.encode('utf-8')
@@ -47,8 +41,7 @@ class DCCNET:
         return frame
     
 
-    #to retornando a data como string e deixando a identificação e tratamento de erros para fora da função
-    def unpack(self, frame): #gabriel
+    def unpack(self, frame):
         offset=0
         sync1,sync2,checksum,length,id,flag=struct.unpack_from("!IIHHHB",frame,offset)
         offset+=struct.calcsize('!IIHHHB')
@@ -78,42 +71,35 @@ class DCCNET:
         while True:
             while True:
                 data_rec, flag_rec, id_rec = self.recv_frame()
-                if(flag_rec == self.FLAG_ACK): # Nunca é pra entrar aqui
-                    raise "recvall recebeu ACK"
-                if(id_rec != self.id_counter_recv): # Recebendo o frame certo
+                if flag_rec == self.FLAG_ACK:
+                    raise self.wrong_flag
+                if id_rec != self.id_counter_recv: # Recebendo o frame certo
                     dataall += data_rec
                     break
-            if(flag_rec == self.FLAG_END):
+            if flag_rec == self.FLAG_END:
                 break
         return dataall
-            # em loop 
-                #recebe um frame com o recv
-                #data+=data
-                #quando receber um frame com end termina o loop
-            #retorna dado completo
-        
-        #return data
 
     def send_frame(self, data, flag):
         frame = self.pack(data, flag)
         self.sock.sendall(frame)
         
 
-    def sendall(self, dataall): #marco
+    def sendall(self, dataall):
         
         max_dsize = 2**16
         max_dsize //= 8
 
         for i in range(0, len(dataall), max_dsize):
             data = dataall[i: i + max_dsize]
-            flag = 0x00
-            if(i + max_dsize >= len(dataall)): # ultimo frame
+            flag = self.FLAG_EMPTY
+            if i + max_dsize >= len(dataall):
                 flag = self.FLAG_END 
             while True:
                 try:
                     self.send_frame(data, flag)
                     _, flag_rec, id_rec = self.receive_frame()
-                    if(flag_rec == self.FLAG_ACK and id_rec != self.id_counter_recv): # recebeu ack do frame certo
+                    if flag_rec == self.FLAG_ACK and id_rec != self.id_counter_recv:
                         self.id_counter_recv = id_rec
                         break
                 except socket.timeout:
@@ -134,6 +120,12 @@ class DCCNET:
             checksum = (checksum & 0xFFFF) + (checksum >> 16)
         
         return ~checksum & 0xFFFF
+
+
+    class wrong_flag(Exception):
+        pass
+
+    class empty_frame(Exception):
     
 
 
