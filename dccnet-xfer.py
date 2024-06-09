@@ -3,14 +3,8 @@ import sys
 import threading
 from DCCNET import DCCNET
 
-def receive_file(receiver, output):
-    data = receiver.recvall()
-    with open(output, 'w') as f:
-        f.write(data)
-
-    pass
-
-def comm(dccnet: DCCNET, input, output):
+def comm(dccnet: DCCNET, sock, input, output):
+    dccnet.sock = sock
     has_finished_receiving = False
     input_file = open(input, 'r')
 
@@ -51,50 +45,55 @@ def comm(dccnet: DCCNET, input, output):
                     
                     elif id == dccnet.ID_RESET and flag == dccnet.FLAG_RESET:
                         dccnet.sock.close()
-                        return
+                        raise dccnet.reset()
     input_file.close()
 
     while not has_finished_receiving:
         data, flag, id, checksum = dccnet.recv_frame()
-
-        if flag & dccnet.FLAG_END:
-            has_finished_receiving = True
-        elif not data:
-            raise dccnet.invalid_payload
-        
-        if id != dccnet.id_recv:
-            if data:
-                with open(output, 'w') as out:
-                    out.write(data)
-            dccnet.send_frame(data=None, flag=dccnet.FLAG_ACK)
-            dccnet.id_recv ^= 1
-
-        elif id == dccnet.id_recv and checksum == dccnet.last_checksum:
-            dccnet.send_frame(data=None, flag=dccnet.FLAG_ACK)
-        
-        elif id == dccnet.ID_RESET and flag == dccnet.FLAG_RESET:
-            dccnet.sock.close()
-            return
+        has_finished_receiving = recv_file(dccnet, flag, data, 
+                                           checksum, output, has_finished_receiving)
 
     dccnet.sock.close()
         
 
+def recv_file(dccnet: DCCNET, flag, data, checksum, output, has_finished_receiving):
+    if flag & dccnet.FLAG_END:
+        has_finished_receiving = True
+    elif not data:
+        raise dccnet.invalid_payload
+    
+    if id != dccnet.id_recv:
+        if data:
+            with open(output, 'w') as out:
+                out.write(data)
+        dccnet.send_frame(data=None, flag=dccnet.FLAG_ACK)
+        dccnet.id_recv ^= 1
+
+    elif id == dccnet.id_recv and checksum == dccnet.last_checksum:
+        dccnet.send_frame(data=None, flag=dccnet.FLAG_ACK)
+    
+    elif id == dccnet.ID_RESET and flag == dccnet.FLAG_RESET:
+        dccnet.sock.close()
+        raise dccnet.reset
+    
+    return has_finished_receiving
+
+
 def main():
     _, mode, *params = sys.argv
-
-    receiver = DCCNET()
+    dccnet = DCCNET()
 
     if mode == '-s':
-        s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-        s.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
+        sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+        sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
 
         port = 12345
-        s.bind(('::', port))
-        s.listen(5)
+        sock.bind(('::', port))
+        sock.listen(5)
 
         while True:
-            c, addr = s.accept()
-            c.close()
+            c, addr = sock.accept()
+            threading.Thread(target=comm, args=(dccnet, c, input, output)).start()
 
     else:
         host, input, output = params
@@ -107,5 +106,4 @@ def main():
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             sock.connect((ip,port))
         sock.settimeout(1)
-        dccnet = DCCNET(sock)
-        comm(dccnet, input, output)
+        comm(dccnet, sock, input, output)

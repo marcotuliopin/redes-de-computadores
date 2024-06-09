@@ -20,6 +20,7 @@ class DCCNET:
         self.invalid_flag = InvalidFlag()
         self.corrupted_frame = CorruptedFrame()
         self.invalid_payload = InvalidPayload()
+        self.reset = Reset()
 
         # Implementation Variables
         self.sock = sock
@@ -123,4 +124,7 @@ class CorruptedFrame(Exception):
     pass
 
 class InvalidPayload(Exception):
+    pass
+
+class Reset(Exception):
     pass
