@@ -4,8 +4,8 @@ import struct
 class DCCNET:
     def __init__(self,host,port):
         self.TIMEOUT= 1
-        self.id_counter_send = 0
-        self.id_counter_recv = 1
+        self.id_send = 0
+        self.id_recv = 1
         self.SYNC=0xDCC023C2
         self.SYNC_SIZE = 4
         self.CHECKSUM_SIZE = 2
@@ -13,6 +13,8 @@ class DCCNET:
         self.FLAG_ACK = 0x80
         self.FLAG_END = 0x40
         self.FLAG_EMPTY = 0x00
+        self.wrong_flag = WrongFlag()
+        self.corrupted_frame = CorruptedFrame()
         
         try:
             self.sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
@@ -49,7 +51,7 @@ class DCCNET:
         data=data.decode('utf-8')
         return sync1,sync2,checksum,length,id,flag,data
          
-    def recv_frame(self): #araju
+    def recv_frame(self):
         sync_count = 0
         while sync_count < 2:
             sync = self.sock.recv(self.SYNC_SIZE)
@@ -57,14 +59,16 @@ class DCCNET:
                 sync_count += 1
             else:
                 sync_count = 0
-        #add try except para recebimentos
+
         header = self.sock.recv(self.HEADER_SIZE - self.SYNC_SIZE)
-        checksum_rec, length_rec, id_rec, flag_rec = struct.unpack('!HHHB', header[:5])
-        data_rec = self.sock.recv(length_rec)
-        frame_wo_checksum = struct.pack(f'!IIHHBB{length_rec}s', self.SYNC, self.SYNC, 0 , length_rec, id_rec, flag_rec, data_rec)
-        if self.checksum(frame_wo_checksum) != checksum_rec:
-            return None,  -1
-        return data_rec, flag_rec, id_rec
+        checksum, length, id, flag = struct.unpack('!HHHB', header[:5])
+
+        data = self.sock.recv(length)
+
+        frame = struct.pack(f'!IIHHBB{length}s', self.SYNC, self.SYNC, 0 , length, id, flag, data)
+        if self.checksum(frame) != checksum:
+            raise self.corrupted_frame
+        return data, flag, id
 
     def recvall(self):
         dataall = "".encode('utf-8')
@@ -73,7 +77,7 @@ class DCCNET:
                 data_rec, flag_rec, id_rec = self.recv_frame()
                 if flag_rec == self.FLAG_ACK:
                     raise self.wrong_flag
-                if id_rec != self.id_counter_recv: # Recebendo o frame certo
+                if id_rec != self.id_recv: # Recebendo o frame certo
                     dataall += data_rec
                     break
             if flag_rec == self.FLAG_END:
@@ -85,24 +89,25 @@ class DCCNET:
         self.sock.sendall(frame)
         
 
-    def sendall(self, dataall):
-        
-        max_dsize = 2**16
-        max_dsize //= 8
+    def sendall(self, data):
+        max_frame_size = 2**16
+        max_frame_size //= 8
 
-        for i in range(0, len(dataall), max_dsize):
-            data = dataall[i: i + max_dsize]
+        for i in range(0, len(data), max_frame_size):
             flag = self.FLAG_EMPTY
-            if i + max_dsize >= len(dataall):
+
+            frame = data[i: i + max_frame_size]
+            if i + max_frame_size >= len(data):
                 flag = self.FLAG_END 
+
             while True:
                 try:
-                    self.send_frame(data, flag)
-                    _, flag_rec, id_rec = self.receive_frame()
-                    if flag_rec == self.FLAG_ACK and id_rec != self.id_counter_recv:
-                        self.id_counter_recv = id_rec
+                    self.send_frame(frame, flag)
+                    _, flag_rec, id_rec = self.recv_frame()
+                    if flag_rec == self.FLAG_ACK and id_rec != self.id_recv:
+                        self.id_recv = id_rec
                         break
-                except socket.timeout:
+                except (socket.timeout, self.corrupted_frame):
                     pass
     
 
@@ -121,15 +126,8 @@ class DCCNET:
         
         return ~checksum & 0xFFFF
 
+class WrongFlag(Exception):
+    pass
 
-    class wrong_flag(Exception):
-        pass
-
-    class empty_frame(Exception):
-    
-
-
-    #sender
-
-    #sendall para enviar o dado
-
+class CorruptedFrame(Exception):
+    pass
