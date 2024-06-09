@@ -1,8 +1,9 @@
 import socket
 import struct
+from typing import Optional
 
 class DCCNET:
-    def __init__(self, sock=None):
+    def __init__(self, sock: Optional[socket.socket] =None):
         # Constants
         self.TIMEOUT= 1
         self.SYNC=0xDCC023C2
@@ -12,33 +13,35 @@ class DCCNET:
         self.FLAG_ACK = 0x80
         self.FLAG_END = 0x40
         self.FLAG_EMPTY = 0x00
+        self.FLAG_RESET = 0x20
+        self.ID_RESET = 65535
 
         # Exceptions
-        self.wrong_flag = WrongFlag()
+        self.invalid_flag = InvalidFlag()
         self.corrupted_frame = CorruptedFrame()
+        self.invalid_payload = InvalidPayload()
 
         # Implementation Variables
         self.sock = sock
         self.id_send = 0
         self.id_recv = 1
+        self.last_checksum = 0
 
-    def pack(self,data,flag):
-        # Definindo os campos do frame
-        data=data.encode('ascii')
+    def pack(self, data, flag):
+        data = data.encode('ascii')
         length = len(data)
+        aux = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, 0, length, self.id_send, flag, data)
 
-        # Empacotar SYNC, ID e Length em big-endian
-        aux = struct.pack(f'!IIHHHB{length}s', self.SYNC,self.SYNC, 0, length, self.ID,flag,data)
-        frame = struct.pack(f'!IIHHHB{length}s', self.SYNC,self.SYNC, self.checksum(aux), length, self.ID,flag,data)
+        frame = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, self.checksum(aux), length, self.id_send, flag, data)
         return frame
     
     def unpack(self, frame):
-        offset=0
-        sync1,sync2,checksum,length,id,flag=struct.unpack_from("!IIHHHB",frame,offset)
-        offset+=struct.calcsize('!IIHHHB')
-        data=struct.unpack_from(f"!{length}s",frame,offset)[0]
-        data=data.decode('utf-8')
-        return sync1,sync2,checksum,length,id,flag,data
+        offset = 0
+        _, _, checksum, length, id, flag = struct.unpack_from("!IIHHHB", frame, offset)
+        offset += struct.calcsize('!IIHHHB')
+        data = struct.unpack_from(f"!{length}s", frame, offset)[0]
+        data = data.decode('utf-8')
+        return checksum, length, id, flag, data
          
     def recv_frame(self):
         sync_count = 0
@@ -57,7 +60,7 @@ class DCCNET:
         frame = struct.pack(f'!IIHHBB{length}s', self.SYNC, self.SYNC, 0 , length, id, flag, data)
         if self.checksum(frame) != checksum:
             raise self.corrupted_frame
-        return data, flag, id
+        return data, flag, id, checksum
 
     def recvall(self):
         dataall = "".encode('utf-8')
@@ -65,7 +68,7 @@ class DCCNET:
             while True:
                 data_rec, flag_rec, id_rec = self.recv_frame()
                 if flag_rec == self.FLAG_ACK:
-                    raise self.wrong_flag
+                    raise self.invalid_flag
                 if id_rec != self.id_recv: # Recebendo o frame certo
                     dataall += data_rec
                     break
@@ -73,11 +76,12 @@ class DCCNET:
                 break
         return dataall
 
-    def send_frame(self, data, flag):
+    def send_frame(self, data, flag=None):
+        if not flag:
+            flag = self.FLAG_EMPTY
         frame = self.pack(data, flag)
         self.sock.sendall(frame)
         
-
     def sendall(self, data):
         max_frame_size = 2**16
         max_frame_size //= 8
@@ -115,8 +119,11 @@ class DCCNET:
         
         return ~checksum & 0xFFFF
 
-class WrongFlag(Exception):
+class InvalidFlag(Exception):
     pass
 
 class CorruptedFrame(Exception):
+    pass
+
+class InvalidPayload(Exception):
     pass
