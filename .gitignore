@@ -1,3 +1,5 @@
 *.txt
 test.py
 test2.py
+client.py
+server.py

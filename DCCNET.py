@@ -8,6 +8,7 @@ class DCCNET:
         self.TIMEOUT = 1
         self.SYNC = 0xDCC023C2
         self.SYNC_SIZE = 4
+        self.SYNC_BYTES = self.SYNC.to_bytes(self.SYNC_SIZE, 'big')
         self.CHECKSUM_SIZE = 2
         self.HEADER_SIZE = 15
         self.FLAG_ACK = 0x80
@@ -29,11 +30,13 @@ class DCCNET:
         self.last_checksum = 0
 
     def pack(self, data, flag):
-        data = data.encode('utf-8')
+        data = data.encode('ascii') if data != None else ''.encode('ascii')
+        flag = flag if flag != None else self.FLAG_EMPTY
         length = len(data)
         aux = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, 0, length, self.id_send, flag, data)
-
         frame = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, self.checksum(aux), length, self.id_send, flag, data)
+        print(f"flag sent: {flag}, id sent: {self.id_send}, checksum sent: {self.checksum(aux)}") 
+
         return frame
     
     def unpack(self, frame):
@@ -41,27 +44,33 @@ class DCCNET:
         _, _, checksum, length, id, flag = struct.unpack_from("!IIHHHB", frame, offset)
         offset += struct.calcsize('!IIHHHB')
         data = struct.unpack_from(f"!{length}s", frame, offset)[0]
-        data = data.decode('utf-8')
+        data = data.decode('ascii')
         return checksum, length, id, flag, data
          
     def recv_frame(self):
         sync_count = 0
         while sync_count < 2:
             sync = self.sock.recv(self.SYNC_SIZE)
-            if sync == self.SYNC:
+            if sync == self.SYNC_BYTES:
                 sync_count += 1
             else:
                 sync_count = 0
 
-        header = self.sock.recv(self.HEADER_SIZE - self.SYNC_SIZE)
-        checksum, length, id, flag = struct.unpack('!HHHB', header[:5])
-
+        header = self.sock.recv(self.HEADER_SIZE - 2*self.SYNC_SIZE)
+        checksum, length, id, flag = struct.unpack('!HHHB', header)
+        
         data = self.sock.recv(length)
-
-        frame = struct.pack(f'!IIHHBB{length}s', self.SYNC, self.SYNC, 0 , length, id, flag, data)
-        if self.checksum(frame) != checksum:
+        
+        aux = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, 0 , length, id, flag, data)
+        """ print(f"Checksum received: {checksum}")
+        print(f"length received: {length}")
+        print(f"ID received: {id}")
+        print(f"Flag received: {flag}")
+        print(f"Data received: {data}")  """
+        if self.checksum(aux) != checksum:
+            print(f"Checksum received: {checksum} != {self.checksum(aux)}")
             raise self.corrupted_frame
-        return data, flag, id, checksum
+        return data.decode('ascii'), flag, id, checksum
 
     def recvall(self):
         dataall = "".encode('utf-8')
