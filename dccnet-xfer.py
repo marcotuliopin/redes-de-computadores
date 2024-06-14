@@ -79,8 +79,7 @@ def main():
     if mode == '-s':
         port, input, output = params
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        port = 12345
-        sock.bind((socket.gethostname(), port))
+        sock.bind((socket.gethostname(), int(port)))
         sock.listen(5)
 
         while True:
@@ -104,7 +103,7 @@ def main():
             sock.connect((ip, int(port)))
         except socket.error:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect((ip, port))
+            sock.connect((ip, int(port)))
         sock.settimeout(10)
         dccnet = DCCNET()
         comm(dccnet, sock, input, output)
