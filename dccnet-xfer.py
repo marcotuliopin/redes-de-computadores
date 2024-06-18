@@ -7,13 +7,11 @@ from DCCNET import DCCNET
 def comm(dccnet: DCCNET, sock, input, output):
     dccnet.sock = sock
     has_finished_receiving = False
-
+    print(f"ack flag: {dccnet.FLAG_ACK}, end flag: {dccnet.FLAG_END}")
     with open(input, 'r') as f:
         buffer = f.read()
-    fsize = 2**16
-    fsize //= 8
+    fsize = 4096
     frames = [buffer[i: i + fsize] for i in range(0, len(buffer), fsize)]
-
     for i in range(len(frames)):
         print(f"Sending frame {i + 1}/{len(frames)}")
         frame = frames[i]
@@ -25,11 +23,11 @@ def comm(dccnet: DCCNET, sock, input, output):
         while True:
             dccnet.send_frame(frame, flag)
             data, flag, id, checksum = dccnet.recv_frame()
-            print(f"flag rcv: {flag}, id rcv: {id}, checksum rcv: {checksum}") 
+            print(f"flag rcv: {flag}, id rcv: {id}, checksum rcv: {checksum}, data rcv: {data}") 
             # Receiving ACK from sent file
-            if flag & dccnet.FLAG_ACK and id != dccnet.id_send: # receieing late ack
+            if flag & dccnet.FLAG_ACK and id != dccnet.id_send: # receiving late ack
                 continue
-            if flag & dccnet.FLAG_ACK and id == dccnet.id_send:
+            elif flag & dccnet.FLAG_ACK and id == dccnet.id_send:
                 if flag & dccnet.FLAG_END:
                     raise dccnet.invalid_flag
                 if data:
@@ -38,6 +36,7 @@ def comm(dccnet: DCCNET, sock, input, output):
                 break
             # Receiving data from external file
             else:
+                print(f"Recebeu arquivo - flag: {flag} // {flag & dccnet.FLAG_END} ")
                 has_finished_receiving = recv_file(dccnet, flag, data, 
                                                 checksum, output, has_finished_receiving)
             time.sleep(1)
@@ -51,6 +50,7 @@ def comm(dccnet: DCCNET, sock, input, output):
         
 
 def recv_file(dccnet: DCCNET, flag, data, checksum, output, has_finished_receiving):
+    print(f"data: {data}")
     if flag & dccnet.FLAG_END:
         has_finished_receiving = True
     elif not data:
@@ -95,8 +95,6 @@ def main():
         host, input, output = params
         ip, port = host.split(sep=':')
         
-        ip = socket.gethostname()
-        port = 12345
         try:
             print(ip, port)
             sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)

@@ -35,7 +35,7 @@ class DCCNET:
         length = len(data)
         aux = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, 0, length, self.id_send, flag, data)
         frame = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, self.checksum(aux), length, self.id_send, flag, data)
-        print(f"flag sent: {flag}, id sent: {self.id_send}, checksum sent: {self.checksum(aux)}") 
+        print(f"flag sent: {flag}, length sent: {length}, id sent: {self.id_send}, checksum sent: {self.checksum(aux)}") 
 
         return frame
     
@@ -57,8 +57,9 @@ class DCCNET:
                 sync_count = 0
 
         header = self.sock.recv(self.HEADER_SIZE - 2*self.SYNC_SIZE)
+        print(f"header received: {header.hex()}")
         checksum, length, id, flag = struct.unpack('!HHHB', header)
-        
+        print(f"length recv: {length}")
         data = self.sock.recv(length)
         
         aux = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, 0 , length, id, flag, data)
