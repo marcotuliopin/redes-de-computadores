@@ -11,10 +11,10 @@ class DCCNET:
         self.SYNC_BYTES = self.SYNC.to_bytes(self.SYNC_SIZE, 'big')
         self.CHECKSUM_SIZE = 2
         self.HEADER_SIZE = 15
-        self.FLAG_ACK = 0x80
-        self.FLAG_END = 0x40
-        self.FLAG_EMPTY = 0x00
-        self.FLAG_RESET = 0x20
+        self.FLAG_ACK = 0x80 # 128
+        self.FLAG_END = 0x40 # 64
+        self.FLAG_EMPTY = 0x00 # 0
+        self.FLAG_RESET = 0x20 # 32
         self.ID_RESET = 65535
 
         # Exceptions
@@ -35,7 +35,7 @@ class DCCNET:
         length = len(data)
         aux = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, 0, length, self.id_send, flag, data)
         frame = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, self.checksum(aux), length, self.id_send, flag, data)
-        print(f"flag sent: {flag}, length sent: {length}, id sent: {self.id_send}, checksum sent: {self.checksum(aux)}") 
+        print(f"flag sent: {flag:x}, length sent: {length}, id sent: {self.id_send:x}, checksum sent: {self.checksum(aux):x}") 
 
         return frame
     
@@ -57,9 +57,7 @@ class DCCNET:
                 sync_count = 0
 
         header = self.sock.recv(self.HEADER_SIZE - 2*self.SYNC_SIZE)
-        print(f"header received: {header.hex()}")
         checksum, length, id, flag = struct.unpack('!HHHB', header)
-        print(f"length recv: {length}")
         data = self.sock.recv(length)
         
         aux = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, 0 , length, id, flag, data)
@@ -71,6 +69,7 @@ class DCCNET:
         if self.checksum(aux) != checksum:
             print(f"Checksum received: {checksum} != {self.checksum(aux)}")
             raise self.corrupted_frame
+        print(f"flag rcv: {flag:x}, length rcv: {length}, id rcv: {id:x}, checksum rcv: {checksum:x}")
         return data.decode('ascii'), flag, id, checksum
 
     def recvall(self):
