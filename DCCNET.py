@@ -35,8 +35,8 @@ class DCCNET:
         length = len(data)
         aux = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, 0, length, self.id_send, flag, data)
         frame = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, self.checksum(aux), length, self.id_send, flag, data)
-        print(f"frame setn: {frame.hex(':')}")
-        print(f"len fram sent: {len(frame)}, flag sent: {flag:x}, length sent: {length}, id sent: {self.id_send:x}, checksum sent: {self.checksum(aux):x}, data sent: {data}") 
+        # print(f"frame sent: {frame.hex(':')}")
+        print(f"len frame sent: {len(frame)}, flag sent: {flag:x}, length sent: {length}, id sent: {self.id_send:x}, checksum sent: {self.checksum(aux):x}, data sent: {data}") 
 
         return frame
     
@@ -62,12 +62,14 @@ class DCCNET:
         data = self.sock.recv(length)
         
         aux = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, 0 , length, id, flag, data)
+        data = data.decode('ascii')
 
         if self.checksum(aux) != checksum:
             print(f"Checksum received: {checksum} != {self.checksum(aux)}")
             raise self.corrupted_frame
-        print(f"flag rcv: {flag:x}, length rcv: {length}, id rcv: {id:x}, checksum rcv: {checksum:x}")
-        return data.decode('ascii'), flag, id, checksum
+        print(f"flag recv: 0x{flag:x} == {flag}, length recv: {length}, id recv: {id:x}, checksum recv: {checksum:x}, data recv: {data}")
+        print()
+        return data, flag, id, checksum
 
 
     def send_frame(self, data, flag=None):

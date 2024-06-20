@@ -8,10 +8,9 @@ def comm(dccnet: DCCNET, sock, input, output):
     dccnet.sock = sock
     has_finished_receiving = False
     print(f"ack flag: {dccnet.FLAG_ACK}, end flag: {dccnet.FLAG_END}")
-    with open(input, 'r') as f:
-        buffer = f.read()
-    fsize = 4096
-    frames = [buffer[i: i + fsize] for i in range(0, len(buffer), fsize)]
+
+    frames = list(read_file_in_chunks(input))
+
     for i in range(len(frames)):
         print(f"Sending frame {i + 1}/{len(frames)}")
         frame = frames[i]
@@ -23,7 +22,7 @@ def comm(dccnet: DCCNET, sock, input, output):
         while True:
             dccnet.send_frame(frame, flag)
             data, flag, id, checksum = dccnet.recv_frame()
-            print(f"flag rcv: {flag}, id rcv: {id}, checksum rcv: {checksum}, data rcv: {data}") 
+            # print(f"flag rcv: {flag}, id rcv: {id}, checksum rcv: {checksum}, data rcv: {data}") 
             # Receiving ACK from sent file
             if flag & dccnet.FLAG_ACK and id != dccnet.id_send: # receiving late ack
                 continue
@@ -47,6 +46,18 @@ def comm(dccnet: DCCNET, sock, input, output):
                                            checksum, output, has_finished_receiving)
     print('File transfer completed')
     dccnet.sock.close()
+
+    
+def read_file_in_chunks(input_file, chunk_size=4096):
+    with open(input_file, 'r') as f:
+        first_line = f.readline() 
+        yield first_line
+
+        while True:
+            chunk = f.read(chunk_size)
+            if not chunk:
+                break
+            yield chunk
         
 
 def recv_file(dccnet: DCCNET, flag, data, checksum, output, has_finished_receiving):
