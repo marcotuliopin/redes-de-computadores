@@ -5,7 +5,7 @@ from typing import Optional
 class DCCNET:
     def __init__(self, sock: Optional[socket.socket]=None):
         # Constants
-        self.TIMEOUT = 1
+        self.TIMEOUT = 100
         self.SYNC = 0xDCC023C2
         self.SYNC_SIZE = 4
         self.SYNC_BYTES = self.SYNC.to_bytes(self.SYNC_SIZE, 'big')
@@ -29,14 +29,14 @@ class DCCNET:
         self.id_recv = 1
         self.last_checksum = 0
 
-    def pack(self, data, flag):
+    def pack(self,id, data, flag):
         data = data.encode('ascii') if data != None else ''.encode('ascii')
         flag = flag if flag != None else self.FLAG_EMPTY
         length = len(data)
-        aux = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, 0, length, self.id_send, flag, data)
-        frame = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, self.checksum(aux), length, self.id_send, flag, data)
+        aux = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, 0, length, id, flag, data)
+        frame = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, self.checksum(aux), length, id, flag, data)
         # print(f"frame sent: {frame.hex(':')}")
-        print(f"len frame sent: {len(frame)}, flag sent: {flag:x}, length sent: {length}, id sent: {self.id_send:x}, checksum sent: {self.checksum(aux):x}, data sent: {data}") 
+        print(f"len frame sent: {len(frame)}, flag sent: {flag:x}, length sent: {length}, id sent: {id:x}, checksum sent: {self.checksum(aux):x}, data sent: {data}") 
 
         return frame
     
@@ -62,7 +62,7 @@ class DCCNET:
         data = self.sock.recv(length)
         
         aux = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, 0 , length, id, flag, data)
-        data = data.decode('ascii')
+        data = data.decode('utf-8')
 
         if self.checksum(aux) != checksum:
             print(f"Checksum received: {checksum} != {self.checksum(aux)}")
@@ -72,14 +72,68 @@ class DCCNET:
         return data, flag, id, checksum
 
 
-    def send_frame(self, data, flag=None):
+    def send_frame(self, data, flag=None,id=None):
+        if not id:
+            id=self.id_send
         if not flag:
             flag = self.FLAG_EMPTY
-        frame = self.pack(data, flag)
+        frame = self.pack(id,data, flag)
         self.sock.sendall(frame)
+    
+
+
+
+
+    def read_in_chunks(self,data, chunk_size=4096):
+        text_bytes = data.encode('utf-8')  # Converte o texto para bytes usando codificação UTF-8
+        chunks = []
+        for i in range(0, len(text_bytes), chunk_size):
+            chunks.append(text_bytes[i:i + chunk_size])
+        return chunks
         
 
+    def send_all(self,data):
+        frames=self.read_in_chunks(data)
+        #envia todos os frames
+        for i in range(len(frames)):
+            frame_data = frames[i].decode('utf-8')
+            if i == len(frames) - 1: flag = self.FLAG_END
+            else: flag = self.FLAG_EMPTY
+            #tenta enviar cada frame_data ate receber um ack
+            while True:
+                self.send_frame(frame_data,flag)
+                recv_data,recv_flag,recv_id,recv_checksum=self.recv_frame()
+                if(recv_flag==self.FLAG_ACK and recv_id==self.id_send):
+                    if flag & self.FLAG_END:
+                        raise self.invalid_flag
+                    if data:
+                        raise self.invalid_payload
+                    else:
+                        break
+        #adicionar envio de frame de reset no final
+
     
+
+    def recv_all(self):
+        #acknowledgement frame for the last transmitted frame; EU ACHO QUE ISSO TA ERRADO E NAO PRECISA NA NOSSA IMPLEMENTACAO
+        #a data frame with an identifier (ID) different from that of the last received frame;
+        #a retransmission of the last received frame;
+        #or a reset frame.
+        recv_data=""
+        while True:
+            data, flag, id, checksum= self.recv_frame()
+            if id != self.id_recv:
+                self.id_recv=id
+                recv_data+=data
+            self.send_frame(None,self.FLAG_ACK,self.id_recv)
+            #bom checar se realmente para quando receber o end
+            if(flag==self.FLAG_END):
+                break
+        return recv_data
+        #temos que adicionar um reinicio se receber a flag de reset
+
+
+
 
     def checksum(self, data):
         """Calculate the Internet checksum as specified by RFC 1071."""

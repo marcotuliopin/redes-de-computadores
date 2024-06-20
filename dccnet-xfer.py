@@ -8,11 +8,13 @@ has_finished_sending = False
 
 def open_communication(sock, input, output):
     frames = list(read_file_in_chunks(input))
+    print("TAMANHO: ",len(frames))
 
     dccnet = DCCNET(sock)
     condition = threading.Condition()
     sock_lock = threading.Lock()
     finish_lock = threading.Lock()
+
     # Create threads for sending and receiving
     send_thread = threading.Thread(target=send_file, args=(dccnet, frames, condition, sock_lock, finish_lock, has_finished_sending))
     recv_thread = threading.Thread(target=receive_file, args=(dccnet, output, condition, sock_lock, finish_lock))
@@ -126,33 +128,64 @@ def main():
 
     if mode == '-s':
         port, input, output = params
+        # acho que nosso server aceita somente ipv4
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.bind((socket.gethostname(), int(port)))
+        #ISSO É UMA FORÇA BRUTA PRA QUANDO O SERVER NAO TERMINAR DIREITO
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.bind(("0.0.0.0", int(port)))
         sock.listen(5)
 
         while True:
             print('Listening...')
             c, addr = sock.accept()
             print(f"Listening: {addr}")
-            dccnet = DCCNET()
-            comm(dccnet, c, input, output)
-            c.close()
+            try:
+                open_communication(sock,input,output)
+            finally:
+                c.close()
             # threading.Thread(target=comm, args=(dccnet, c, input, output)).start()
 
     else:
         host, input, output = params
         ip, port = host.split(sep=':')
-        
+
+        connected = False
+        sock = None
+        # Attempt IPv6 connection
         try:
-            print(ip, port)
-            sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+            print(f"Trying IPv6 connection to {ip}:{port}")
+            sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
             sock.connect((ip, int(port)))
-        except socket.error:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect((ip, int(port)))
-        sock.settimeout(10)
-        dccnet = DCCNET()
-        comm(dccnet, sock, input, output)
+            connected = True
+        except socket.error as e:
+            print(f"IPv6 connection failed: {e}")
+
+        # Attempt IPv4 connection if IPv6 failed
+        if not connected:
+            try:
+                print(f"Trying IPv4 connection to {ip}:{port}")
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.connect((ip, int(port)))
+                connected = True
+            except socket.error as e:
+                print(f"IPv4 connection failed: {e}")
+
+        if connected:
+            sock.settimeout(10)
+            open_communication(sock, input, output)
+            sock.close()
+        else:
+            print(f"Failed to connect to {ip}:{port} with both IPv6 and IPv4")
+        
+        # try:
+        #     print(ip, port)
+        #     sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+        #     sock.connect((ip, int(port)))
+        # except socket.error:
+        #     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        #     sock.connect((ip, int(port)))
+        # sock.settimeout(10)
+        # open_communication(sock,input,output)
 
 if __name__ == '__main__':
     main()
