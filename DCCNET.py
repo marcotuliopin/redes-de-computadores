@@ -3,7 +3,7 @@ import struct
 from typing import Optional
 
 class DCCNET:
-    def __init__(self, sock: Optional[socket.socket] =None):
+    def __init__(self, sock: Optional[socket.socket]=None):
         # Constants
         self.TIMEOUT = 1
         self.SYNC = 0xDCC023C2

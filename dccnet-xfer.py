@@ -4,49 +4,88 @@ import threading
 import time
 from DCCNET import DCCNET
 
-def comm(dccnet: DCCNET, sock, input, output):
-    dccnet.sock = sock
-    has_finished_receiving = False
-    print(f"ack flag: {dccnet.FLAG_ACK}, end flag: {dccnet.FLAG_END}")
+has_finished_sending = False
 
+def open_communication(sock, input, output):
     frames = list(read_file_in_chunks(input))
 
-    for i in range(len(frames)):
-        print(f"Sending frame {i + 1}/{len(frames)}")
-        frame = frames[i]
-        if i == len(frames) - 1:
-            flag = dccnet.FLAG_END
-        else:
-            flag = dccnet.FLAG_EMPTY
+    dccnet = DCCNET(sock)
+    condition = threading.Condition()
+    sock_lock = threading.Lock()
+    finish_lock = threading.Lock()
+    # Create threads for sending and receiving
+    send_thread = threading.Thread(target=send_file, args=(dccnet, frames, condition, sock_lock, finish_lock, has_finished_sending))
+    recv_thread = threading.Thread(target=receive_file, args=(dccnet, output, condition, sock_lock, finish_lock))
+    try:
+        # Start the threads
+        send_thread.start()
+        recv_thread.start()
+    finally:
+        # Wait for both threads to complete
+        send_thread.join()
+        recv_thread.join()
 
-        while True:
-            dccnet.send_frame(frame, flag)
-            data, flag, id, checksum = dccnet.recv_frame()
-            # print(f"flag rcv: {flag}, id rcv: {id}, checksum rcv: {checksum}, data rcv: {data}") 
-            # Receiving ACK from sent file
-            if flag & dccnet.FLAG_ACK and id != dccnet.id_send: # receiving late ack
-                continue
-            elif flag & dccnet.FLAG_ACK and id == dccnet.id_send:
-                if flag & dccnet.FLAG_END:
-                    raise dccnet.invalid_flag
-                if data:
-                    raise dccnet.invalid_payload
-                dccnet.id_send ^= 1
-                break
-            # Receiving data from external file
-            else:
-                print(f"Recebeu arquivo - flag: {flag} // {flag & dccnet.FLAG_END} ")
-                has_finished_receiving = recv_file(dccnet, flag, data, 
-                                                checksum, output, has_finished_receiving)
-            time.sleep(1)
-            
-    while not has_finished_receiving:
-        data, flag, id, checksum = dccnet.recv_frame()
-        has_finished_receiving = recv_file(dccnet, flag, data, 
-                                           checksum, output, has_finished_receiving)
-    print('File transfer completed')
     dccnet.sock.close()
 
+    print('File transfer completed')
+
+def send_file(dccnet: DCCNET, frames, condition: threading.Condition, sock_lock: threading.Lock, 
+              finish_lock: threading.Lock):
+    dccnet.sock.close()
+    for i in range(len(frames)):
+        frame = frames[i]
+
+        if i == len(frames) - 1: flag = dccnet.FLAG_END
+        else: flag = dccnet.FLAG_EMPTY
+
+        while True:
+            with sock_lock:
+                dccnet.send_frame(frame, flag)
+            with condition:
+                condition.wait()
+            dccnet.id_send ^= 1
+
+    with finish_lock:
+        has_finished_sending = True
+
+def receive_file(dccnet: DCCNET, output_file, condition: threading.Condition, 
+                 sock_lock: threading.Lock, finish_lock: threading.Lock):
+    has_finished_receiving = False
+
+    while True:
+        with sock_lock:
+            data, flag, id, checksum = dccnet.recv_frame()
+        # Receiving ACK from sent file
+        if flag & dccnet.FLAG_ACK and id != dccnet.id_send: # receiving late ack
+            continue
+        # Receiving ACK
+        elif flag & dccnet.FLAG_ACK and id == dccnet.id_send:
+            if flag & dccnet.FLAG_END:
+                raise dccnet.invalid_flag
+            if data:
+                raise dccnet.invalid_payload
+            with condition:
+                condition.notify()
+        # Receiving data from external file
+        else:
+            has_finished_receiving = recv_file(dccnet, flag, data, 
+                                            checksum, output_file, has_finished_receiving)
+        if has_finished_receiving: break
+
+    while True:
+        with finish_lock:
+            if has_finished_sending:
+                break
+        with sock_lock:
+            data, flag, id, checksum = dccnet.recv_frame()
+        # Receiving ACK
+        if flag & dccnet.FLAG_ACK and id == dccnet.id_send:
+            if flag & dccnet.FLAG_END:
+                raise dccnet.invalid_flag
+            if data:
+                raise dccnet.invalid_payload
+            with condition:
+                condition.notify()
     
 def read_file_in_chunks(input_file, chunk_size=4096):
     with open(input_file, 'r') as f:
@@ -59,7 +98,6 @@ def read_file_in_chunks(input_file, chunk_size=4096):
                 break
             yield chunk
         
-
 def recv_file(dccnet: DCCNET, flag, data, checksum, output, has_finished_receiving):
     print(f"data: {data}")
     if flag & dccnet.FLAG_END:
@@ -82,7 +120,6 @@ def recv_file(dccnet: DCCNET, flag, data, checksum, output, has_finished_receivi
         raise dccnet.reset
     
     return has_finished_receiving
-
 
 def main():
     _, mode, *params = sys.argv
