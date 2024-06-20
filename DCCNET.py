@@ -35,7 +35,8 @@ class DCCNET:
         length = len(data)
         aux = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, 0, length, self.id_send, flag, data)
         frame = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, self.checksum(aux), length, self.id_send, flag, data)
-        print(f"flag sent: {flag:x}, length sent: {length}, id sent: {self.id_send:x}, checksum sent: {self.checksum(aux):x}") 
+        print(f"frame setn: {frame.hex(':')}")
+        print(f"len fram sent: {len(frame)}, flag sent: {flag:x}, length sent: {length}, id sent: {self.id_send:x}, checksum sent: {self.checksum(aux):x}, data sent: {data}") 
 
         return frame
     
@@ -61,30 +62,13 @@ class DCCNET:
         data = self.sock.recv(length)
         
         aux = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, 0 , length, id, flag, data)
-        """ print(f"Checksum received: {checksum}")
-        print(f"length received: {length}")
-        print(f"ID received: {id}")
-        print(f"Flag received: {flag}")
-        print(f"Data received: {data}")  """
+
         if self.checksum(aux) != checksum:
             print(f"Checksum received: {checksum} != {self.checksum(aux)}")
             raise self.corrupted_frame
         print(f"flag rcv: {flag:x}, length rcv: {length}, id rcv: {id:x}, checksum rcv: {checksum:x}")
         return data.decode('ascii'), flag, id, checksum
 
-    def recvall(self):
-        dataall = "".encode('utf-8')
-        while True:
-            while True:
-                data_rec, flag_rec, id_rec = self.recv_frame()
-                if flag_rec == self.FLAG_ACK:
-                    raise self.invalid_flag
-                if id_rec != self.id_recv:
-                    dataall += data_rec
-                    break
-            if flag_rec == self.FLAG_END:
-                break
-        return dataall
 
     def send_frame(self, data, flag=None):
         if not flag:
@@ -92,26 +76,7 @@ class DCCNET:
         frame = self.pack(data, flag)
         self.sock.sendall(frame)
         
-    def sendall(self, data):
-        max_frame_size = 2**16
-        max_frame_size //= 8
 
-        for i in range(0, len(data), max_frame_size):
-            flag = self.FLAG_EMPTY
-
-            frame = data[i: i + max_frame_size]
-            if i + max_frame_size >= len(data):
-                flag = self.FLAG_END 
-
-            while True:
-                try:
-                    self.send_frame(frame, flag)
-                    _, flag_rec, id_rec = self.recv_frame()
-                    if flag_rec == self.FLAG_ACK and id_rec != self.id_recv:
-                        self.id_recv = id_rec
-                        break
-                except (socket.timeout, self.corrupted_frame):
-                    pass
     
 
     def checksum(self, data):
