@@ -19,7 +19,7 @@ def main():
         while True:
             print('Listening...')
             c, addr = sock.accept()
-            dccnet = DCCNET(sock)
+            dccnet = DCCNET(c)
             print(f"Listening: {addr}")
             try:
                 recv_data=dccnet.recv_all()

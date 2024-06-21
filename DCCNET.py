@@ -52,16 +52,20 @@ class DCCNET:
         sync_count = 0
         while sync_count < 2:
             sync = self.sock.recv(self.SYNC_SIZE)
+            if not sync:  # If the connection is closed, break the loop
+                break
             if sync == self.SYNC_BYTES:
                 sync_count += 1
             else:
                 sync_count = 0
 
-        header = self.sock.recv(self.HEADER_SIZE - 2*self.SYNC_SIZE)
+        header = self.sock.recv(self.HEADER_SIZE - 2 * self.SYNC_SIZE)
+        if not header:  # If the connection is closed, return empty data
+            return None, None, None, None
         checksum, length, id, flag = struct.unpack('!HHHB', header)
         data = self.sock.recv(length)
         
-        aux = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, 0 , length, id, flag, data)
+        aux = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, 0, length, id, flag, data)
         data = data.decode('utf-8')
 
         if self.checksum(aux) != checksum:
@@ -104,11 +108,13 @@ class DCCNET:
                 self.send_frame(frame_data,flag)
                 recv_data,recv_flag,recv_id,recv_checksum=self.recv_frame()
                 if(recv_flag==self.FLAG_ACK and recv_id==self.id_send):
-                    if flag & self.FLAG_END:
+                    if recv_flag & self.FLAG_END:
                         raise self.invalid_flag
-                    if data:
+                    if recv_data:
                         raise self.invalid_payload
                     else:
+                        self.id_send=1-self.id_send
+                        print("\n\nRECIEVED ACK CONFIRMATION FOR FRAME WITH ID: ",recv_id,"\n\n")
                         break
         #adicionar envio de frame de reset no final
 
@@ -128,6 +134,10 @@ class DCCNET:
             self.send_frame(None,self.FLAG_ACK,self.id_recv)
             #bom checar se realmente para quando receber o end
             if(flag==self.FLAG_END):
+                print("Received END frame, closing connection")
+                break
+            if(flag==self.FLAG_RESET):
+                print("Received reset frame, closing connection")
                 break
         return recv_data
         #temos que adicionar um reinicio se receber a flag de reset
