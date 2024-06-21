@@ -4,6 +4,9 @@ import threading
 import time
 from DCCNET import DCCNET
 
+
+# -c rubick.snes.2advanced.dev:51555 client_input.txt client_output.txt
+# -c 150.164.213.245:51555 client_input.txt client_output.txt
 has_finished_sending = False
 
 def open_communication(sock, input, output):
@@ -14,7 +17,7 @@ def open_communication(sock, input, output):
     sock_lock = threading.Lock()
     finish_lock = threading.Lock()
     # Create threads for sending and receiving
-    send_thread = threading.Thread(target=send_file, args=(dccnet, frames, condition, sock_lock, finish_lock, has_finished_sending))
+    send_thread = threading.Thread(target=send_file, args=(dccnet, frames, condition, sock_lock, finish_lock))
     recv_thread = threading.Thread(target=receive_file, args=(dccnet, output, condition, sock_lock, finish_lock))
     try:
         # Start the threads
@@ -31,7 +34,8 @@ def open_communication(sock, input, output):
 
 def send_file(dccnet: DCCNET, frames, condition: threading.Condition, sock_lock: threading.Lock, 
               finish_lock: threading.Lock):
-    dccnet.sock.close()
+    #nao entendi esse close no inicio
+    #dccnet.sock.close()
     for i in range(len(frames)):
         frame = frames[i]
 
@@ -48,6 +52,8 @@ def send_file(dccnet: DCCNET, frames, condition: threading.Condition, sock_lock:
     with finish_lock:
         has_finished_sending = True
 
+
+#adicionar escrita no output
 def receive_file(dccnet: DCCNET, output_file, condition: threading.Condition, 
                  sock_lock: threading.Lock, finish_lock: threading.Lock):
     has_finished_receiving = False
@@ -66,6 +72,9 @@ def receive_file(dccnet: DCCNET, output_file, condition: threading.Condition,
                 raise dccnet.invalid_payload
             with condition:
                 condition.notify()
+
+
+
         # Receiving data from external file
         else:
             has_finished_receiving = recv_file(dccnet, flag, data, 
@@ -98,8 +107,10 @@ def read_file_in_chunks(input_file, chunk_size=4096):
                 break
             yield chunk
         
+
+
 def recv_file(dccnet: DCCNET, flag, data, checksum, output, has_finished_receiving):
-    print(f"data: {data}")
+    # print(f"data: {data}")
     if flag & dccnet.FLAG_END:
         has_finished_receiving = True
     elif not data:
@@ -109,6 +120,7 @@ def recv_file(dccnet: DCCNET, flag, data, checksum, output, has_finished_receivi
         if data:
             with open(output, 'w') as out:
                 out.write(data)
+        
         dccnet.send_frame(data=None, flag=dccnet.FLAG_ACK)
         dccnet.id_recv ^= 1
 
@@ -127,7 +139,7 @@ def main():
     if mode == '-s':
         port, input, output = params
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.bind((socket.gethostname(), int(port)))
+        sock.bind(('0.0.0.0', int(port)))
         sock.listen(5)
 
         while True:
@@ -135,9 +147,8 @@ def main():
             c, addr = sock.accept()
             print(f"Listening: {addr}")
             dccnet = DCCNET()
-            comm(dccnet, c, input, output)
+            open_communication(c,input,output)
             c.close()
-            # threading.Thread(target=comm, args=(dccnet, c, input, output)).start()
 
     else:
         host, input, output = params
@@ -151,8 +162,8 @@ def main():
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect((ip, int(port)))
         sock.settimeout(10)
-        dccnet = DCCNET()
-        comm(dccnet, sock, input, output)
+        open_communication(sock,input,output)
+        sock.close()
 
 if __name__ == '__main__':
     main()
