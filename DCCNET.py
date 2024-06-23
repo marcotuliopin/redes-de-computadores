@@ -30,15 +30,16 @@ class DCCNET:
         self.id_recv = 1
         self.last_checksum = 0
 
-    def pack(self, data, flag):
+    def pack(self, data, flag, ack_id=-1):
         data = data.encode('ascii') if data != None else ''.encode('ascii')
         flag = flag if flag != None else self.FLAG_EMPTY
         length = len(data)
-        aux = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, 0, length, self.id_send, flag, data)
-        frame = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, self.checksum(aux), length, self.id_send, flag, data)
+        id_to_send = self.id_send if ack_id == -1 else ack_id
+        aux = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, 0, length, id_to_send, flag, data)
+        frame = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, self.checksum(aux), length, id_to_send, flag, data)
 
         print("ENVIADO:")
-        print(f"flag sent: 0x{flag:x} == {flags[flag]}, length sent: {length}, id sent: 0x{self.id_send:x}, checksum sent: 0x{self.checksum(aux):x}, data sent: {data}") 
+        print(f"flag sent: 0x{flag:x} == {flags[flag]}, length sent: {length}, id sent: 0x{id_to_send:x}, checksum sent: 0x{self.checksum(aux):x}, data sent: {data}") 
 
         return frame
     
@@ -68,6 +69,7 @@ class DCCNET:
             header = self.sock.recv(self.HEADER_SIZE - 2*self.SYNC_SIZE)
         except socket.timeout:
             return None, None, None, None
+        print('Received response')
 
         checksum, length, id, flag = struct.unpack('!HHHB', header)
         data = self.sock.recv(length)
@@ -82,10 +84,10 @@ class DCCNET:
         print(f"flag recv: 0x{flag:x} == {flags[flag]}, length recv: {length}, id recv: 0x{id:x}, checksum recv: 0x{recv_checksum:x}, data recv: {data}")
         return data, flag, id, checksum
 
-    def send_frame(self, data, flag=None):
+    def send_frame(self, data, flag=None, ack_id=-1):
         if not flag:
             flag = self.FLAG_EMPTY
-        frame = self.pack(data, flag)
+        frame = self.pack(data, flag, ack_id)
 
         try:
             self.sock.sendall(frame)
