@@ -75,7 +75,6 @@ def send_file(dccnet: DCCNET, frames, ack_lock: threading.Lock, finish_receiving
 
             # Sends ACK
             if ack_to_send != -1:
-                print(f"SENDER: Sending ACK with id {ack_to_send}")
                 dccnet.send_frame(None, dccnet.FLAG_ACK, id=ack_to_send)
                 ack_to_send = -1
 
@@ -95,19 +94,16 @@ def send_file(dccnet: DCCNET, frames, ack_lock: threading.Lock, finish_receiving
 
     # Send ACKs
     while True:
-        print(f'SENDER: Semaphore value {sender_semaphore._value}')
         sender_semaphore.acquire()
 
         with finish_receiving_lock:
             if has_finished_receiving:
                 if ack_to_send != -1:
-                    print(f"SENDER: Sending ACK with id {ack_to_send}")
                     dccnet.send_frame(None, dccnet.FLAG_ACK, id=ack_to_send)
                 receiver_semaphore.release()
                 break
 
         if ack_to_send != -1:
-            print(f"SENDER: Sending ACK with id {ack_to_send}")
             dccnet.send_frame(None, dccnet.FLAG_ACK, id=ack_to_send)
             ack_to_send = -1
 
@@ -138,6 +134,7 @@ def receive_file(dccnet: DCCNET, output_file, ack_lock: threading.Lock, finish_r
 
         # Receiving ACK
         elif flag & dccnet.FLAG_ACK and id != dccnet.id_send: # Receiving late ACK
+            print('-------------------- Late ack ----------------------')
             pass
         elif flag & dccnet.FLAG_ACK and id == dccnet.id_send: # Receiving corresponding ACK
             if flag & dccnet.FLAG_END:
@@ -152,6 +149,7 @@ def receive_file(dccnet: DCCNET, output_file, ack_lock: threading.Lock, finish_r
 
         # Receiving retransmission
         elif id == dccnet.id_recv and checksum == dccnet.last_checksum:
+            print('-------------------- Retransmission ----------------------')
             if ack_to_send == -1:
                 ack_to_send = id # Warn to send ACK
 
