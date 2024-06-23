@@ -37,9 +37,7 @@ def send_checksum(dccnet: DCCNET, message : str, last_id : int, last_check_sum :
             elif id == last_id and checksum == last_check_sum: # retrasmission of last frame
                   dccnet.send_frame(None, flag=dccnet.FLAG_ACK)
 
-def comm(dccnet: DCCNET, sock):
-      dccnet.sock = sock 
-      # Authentication
+def authenticate(dccnet: DCCNET):
       while True:
             dccnet.send_frame(GAS)
             data, flag, id, _ = dccnet.recv_frame()
@@ -49,14 +47,40 @@ def comm(dccnet: DCCNET, sock):
                   dccnet.id_send ^= 1
                   break
 
-      curr_msg = ""
 
+
+def test(dccnet: DCCNET, sock):
+      dccnet.sock = sock
+      authenticate(dccnet)
+      n_frames = 0
+      while True:
+            print("Trying to receive ...")
+            data, flag, id, checksum = dccnet.recv_frame() 
+            if flag & dccnet.FLAG_RESET:
+                  raise Exception(f"{data}")
+            if flag == dccnet.FLAG_EMPTY:
+                  dccnet.send_frame(data = None, flag = dccnet.FLAG_ACK, id=id)
+                  if id == dccnet.id_recv:
+                        continue
+            if flag & dccnet.FLAG_END:
+                  break  
+      
+
+
+
+def comm(dccnet: DCCNET, sock):
+      dccnet.sock = sock 
+      # Authentication
+      authenticate(dccnet)
+      curr_msg = ""
+      n_frames = 0
       while True:
             while True: # Tries to receive a data frame
                   data, flag, id, checksum = dccnet.recv_frame() 
                   if flag & dccnet.FLAG_RESET:
                         raise Exception(f"{data}")
                   if flag == dccnet.FLAG_EMPTY:
+                        print(f"n_frames : {n_frames}")
                         dccnet.send_frame(data = None, flag = dccnet.FLAG_ACK, id=id)
                         if id == dccnet.id_recv:
                               continue
@@ -65,9 +89,11 @@ def comm(dccnet: DCCNET, sock):
                         curr_msg += split_data[0]
                         if '\n' in data:
                               send_checksum(dccnet, curr_msg, id, checksum)
+                        print("PASSOU 1")
                         for i in range(1, len(split_data) - 1):
                               if(split_data[i] != ''):
                                     send_checksum(dccnet, split_data[i])
+                        print("PASSOU 2")
                         curr_msg = split_data[-1]
                         break
 
@@ -92,9 +118,10 @@ def main():
       except socket.error:
           sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
           sock.connect((ip, int(port)))
-      sock.settimeout(10)
+      sock.settimeout(100)
       dccnet = DCCNET()
-      comm(dccnet, sock)
+      test(dccnet, sock)
+      #comm(dccnet, sock)
 
 if __name__ == '__main__':
     main()

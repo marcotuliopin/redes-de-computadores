@@ -45,7 +45,7 @@ class DCCNET:
         frame = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, self.checksum(aux), length, id, flag, data)
         print("ENVIADO")
         print(f"flag sent: {flag:x} == {flags[flag]}, length sent: {length}, id sent: {id:x}, checksum sent: {self.checksum(aux):x}, data sent: {data}") 
-
+        print()
         return frame
     
     def unpack(self, frame):
