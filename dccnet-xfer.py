@@ -143,6 +143,7 @@ def receive_file(dccnet: DCCNET, output_file, ack_lock: threading.Lock, receiver
                     out.write(data)
             dccnet.send_frame(data=None, flag=dccnet.FLAG_ACK, ack_id=id)
             dccnet.id_recv ^= 1
+            dccnet.last_checksum = checksum
 
         # Receiving retransmission
         elif id == dccnet.id_recv and checksum == dccnet.last_checksum:
