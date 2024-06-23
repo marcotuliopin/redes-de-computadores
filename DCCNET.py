@@ -37,9 +37,8 @@ class DCCNET:
         length = len(data)
         aux = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, 0, length, id, flag, data)
         frame = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, self.checksum(aux), length, id, flag, data)
-        print("ENVIADO")
         # print(f"flag sent: {flag:x} == {flags[flag]}, length sent: {length}, id sent: {id:x}, checksum sent: {self.checksum(aux):x}, data sent: {data}") 
-        print(f"flag sent: {flag:x} == {flags[flag]}, length sent: {length}, id sent: {id:x}, checksum sent: {self.checksum(aux):x}") 
+        print(f"ENVIADO: \nflag sent: {flag:x} == {flags[flag]}, length sent: {length}, id sent: 0x{id:x}, checksum sent: 0x{self.checksum(aux):x}") 
 
         return frame
     
@@ -62,14 +61,13 @@ class DCCNET:
                     sync_count += 1
                 else:
                     sync_count = 0
-                a += 1
-                if a > 6:
-                    raise KeyboardInterrupt
+                # a += 1
+                # if a > 6:
+                #     raise KeyboardInterrupt
 
             header = self.sock.recv(self.HEADER_SIZE - 2*self.SYNC_SIZE)
         except socket.timeout:
             return None, None, None, None
-        print('Received response')
 
         checksum, length, id, flag = struct.unpack('!HHHB', header)
         data = self.sock.recv(length)
