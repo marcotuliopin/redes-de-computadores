@@ -11,7 +11,7 @@ flags={
 }
 
 class DCCNET:
-    def __init__(self, sock: Optional[socket.socket] =None):
+    def __init__(self, sock: Optional[socket.socket]=None):
         # Constants
         self.TIMEOUT = 1
         self.SYNC = 0xDCC023C2
@@ -23,13 +23,7 @@ class DCCNET:
         self.FLAG_END = 0x40 # 64
         self.FLAG_EMPTY = 0x00 # 0
         self.FLAG_RESET = 0x20 # 32
-        self.ID_RESET = 65535
-
-        # Exceptions
-        self.invalid_flag = InvalidFlag()
-        self.corrupted_frame = CorruptedFrame()
-        self.invalid_payload = InvalidPayload()
-        self.reset = Reset()
+        self.ID_RESET = 0xffff #65535
 
         # Implementation Variables
         self.sock = sock
@@ -57,27 +51,36 @@ class DCCNET:
         return checksum, length, id, flag, data
          
     def recv_frame(self):
-        sync_count = 0
-        while sync_count < 2:
-            sync = self.sock.recv(self.SYNC_SIZE)
-            if sync == self.SYNC_BYTES:
-                sync_count += 1
-            else:
-                sync_count = 0
+        try:
+            sync_count = 0
+            a = 0
+            while sync_count < 2:
+                sync = self.sock.recv(self.SYNC_SIZE)
+                if not sync: raise self.NoRecvData
+                if sync == self.SYNC_BYTES:
+                    sync_count += 1
+                else:
+                    sync_count = 0
+                a += 1
+                if a > 6:
+                    raise KeyboardInterrupt
 
-        header = self.sock.recv(self.HEADER_SIZE - 2*self.SYNC_SIZE)
+            header = self.sock.recv(self.HEADER_SIZE - 2*self.SYNC_SIZE)
+        except socket.timeout:
+            return None, None, None, None
+        print('Received response')
+
         checksum, length, id, flag = struct.unpack('!HHHB', header)
         data = self.sock.recv(length)
         
-        aux = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, 0 , length, id, flag, data)
+        recv_checksum = self.checksum(struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, 0 , length, id, flag, data))
+        if recv_checksum != checksum:
+            raise self.CorruptedFrame
+
         data = data.decode('ascii')
 
-        if self.checksum(aux) != checksum:
-            print(f"Checksum received: {checksum} != {self.checksum(aux)}")
-            raise self.corrupted_frame
-        print("RECEBIDO")
-        print(f"flag recv: {flag:x} == {flags[flag]}, length recv: {length}, id recv: {id:x}, checksum recv: {checksum:x}, data recv: {data}")
-        print()
+        print("RECEBIDO:")
+        print(f"flag recv: 0x{flag:x} == {flags[flag]}, length recv: {length}, id recv: 0x{id:x}, checksum recv: 0x{recv_checksum:x}, data recv: {data}")
         return data, flag, id, checksum
 
 
@@ -87,11 +90,12 @@ class DCCNET:
         if flag == None:
             flag = self.FLAG_EMPTY
         frame = self.pack(data, flag, id)
-        self.sock.sendall(frame)
+
+        try:
+            self.sock.sendall(frame)
+        except socket.timeout:
+            pass
         
-
-    
-
     def checksum(self, data):
         """Calculate the Internet checksum as specified by RFC 1071."""
         if len(data) % 2 == 1:
@@ -104,14 +108,14 @@ class DCCNET:
             checksum = (checksum & 0xFFFF) + (checksum >> 16)
         return ~checksum & 0xFFFF
 
-class InvalidFlag(Exception):
-    pass
-
-class CorruptedFrame(Exception):
-    pass
-
-class InvalidPayload(Exception):
-    pass
-
-class Reset(Exception):
-    pass
+    # Exceptions
+    class InvalidFlag(Exception):
+        pass
+    class CorruptedFrame(Exception):
+        pass
+    class InvalidPayload(Exception):
+        pass
+    class NoRecvData(Exception):
+        pass
+    class Reset(Exception):
+        pass
