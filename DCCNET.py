@@ -2,6 +2,14 @@ import socket
 import struct
 from typing import Optional
 
+# For debbuging: 
+flags={
+        0x80:"FLAG_ACK",
+        0x40 :"FLAG_END",
+        0x00 :"FLAG_EMPTY",
+        0x20 :"FLAG_RESET"
+}
+
 class DCCNET:
     def __init__(self, sock: Optional[socket.socket] =None):
         # Constants
@@ -29,14 +37,14 @@ class DCCNET:
         self.id_recv = 1
         self.last_checksum = 0
 
-    def pack(self, data, flag):
+    def pack(self, data, flag, id):
         data = data.encode('ascii') if data != None else ''.encode('ascii')
         flag = flag if flag != None else self.FLAG_EMPTY
         length = len(data)
-        aux = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, 0, length, self.id_send, flag, data)
-        frame = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, self.checksum(aux), length, self.id_send, flag, data)
-        # print(f"frame sent: {frame.hex(':')}")
-        print(f"len frame sent: {len(frame)}, flag sent: {flag:x}, length sent: {length}, id sent: {self.id_send:x}, checksum sent: {self.checksum(aux):x}, data sent: {data}") 
+        aux = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, 0, length, id, flag, data)
+        frame = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, self.checksum(aux), length, id, flag, data)
+        print("ENVIADO")
+        print(f"flag sent: {flag:x} == {flags[flag]}, length sent: {length}, id sent: {id:x}, checksum sent: {self.checksum(aux):x}, data sent: {data}") 
 
         return frame
     
@@ -67,15 +75,18 @@ class DCCNET:
         if self.checksum(aux) != checksum:
             print(f"Checksum received: {checksum} != {self.checksum(aux)}")
             raise self.corrupted_frame
-        print(f"flag recv: 0x{flag:x} == {flag}, length recv: {length}, id recv: {id:x}, checksum recv: {checksum:x}, data recv: {data}")
+        print("RECEBIDO")
+        print(f"flag recv: {flag:x} == {flags[flag]}, length recv: {length}, id recv: {id:x}, checksum recv: {checksum:x}, data recv: {data}")
         print()
         return data, flag, id, checksum
 
 
-    def send_frame(self, data, flag=None):
-        if not flag:
+    def send_frame(self, data, flag=None, id = None):
+        if id == None:
+            id = self.id_send
+        if flag == None:
             flag = self.FLAG_EMPTY
-        frame = self.pack(data, flag)
+        frame = self.pack(data, flag, id)
         self.sock.sendall(frame)
         
 

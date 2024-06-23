@@ -4,7 +4,7 @@ import threading
 import time
 import hashlib
 from DCCNET import DCCNET
-
+#python dccnet-md5.py 150.164.213.245:51555
 GAS = "2021032110:1:fd01eed7baa1eb0a3c06480a303c94cfa2b54e34045a307683e88c69e37955d2+3b3ccb9597ef0e57f427b0cde3ae23f1498b7e25c11a639aaefe45ef0eed32d6\n"
 
 def md5_checksum(input_string: str) -> str: 
@@ -36,7 +36,6 @@ def send_checksum(dccnet: DCCNET, message : str, last_id : int, last_check_sum :
                  break
             elif id == last_id and checksum == last_check_sum: # retrasmission of last frame
                   dccnet.send_frame(None, flag=dccnet.FLAG_ACK)
-            time.sleep(1)
 
 def comm(dccnet: DCCNET, sock):
       dccnet.sock = sock 
@@ -49,7 +48,6 @@ def comm(dccnet: DCCNET, sock):
             if flag & dccnet.FLAG_ACK and id == dccnet.id_send:
                   dccnet.id_send ^= 1
                   break
-            time.sleep(1)
 
       curr_msg = ""
 
@@ -58,12 +56,11 @@ def comm(dccnet: DCCNET, sock):
                   data, flag, id, checksum = dccnet.recv_frame() 
                   if flag & dccnet.FLAG_RESET:
                         raise Exception(f"{data}")
-                  elif flag & dccnet.FLAG_ACK or flag & dccnet.FLAG_RESET or id == dccnet.id_recv:
-                        time.sleep(1)
-                        continue
-                  else:
-                        dccnet.send_frame(data = None, flag = dccnet.FLAG_ACK)
-                        print(f"data: {data}")
+                  if flag == dccnet.FLAG_EMPTY:
+                        dccnet.send_frame(data = None, flag = dccnet.FLAG_ACK, id=id)
+                        if id == dccnet.id_recv:
+                              continue
+                        dccnet.id_recv = id
                         split_data = data.split('\n')
                         curr_msg += split_data[0]
                         if '\n' in data:
