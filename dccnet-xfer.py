@@ -179,10 +179,6 @@ def receive_file(dccnet: DCCNET, output_file, ack_lock: threading.Lock, finish_r
             # ack_to_send.put(id)
             with send_lock:
                 dccnet.send_frame(None, dccnet.FLAG_ACK, id=id)
-        
-        else:
-            print('------------------------------BUG-----------------------------')
-            print(dccnet.id_send, dccnet.id_recv)
 
         with finish_receiving_lock:
             if has_finished_receiving: break
