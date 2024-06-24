@@ -1,4 +1,6 @@
 *.txt
+__pycache__/*
+.vscode/*
 test.py
 test2.py
 client.py

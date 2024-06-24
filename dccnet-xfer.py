@@ -73,10 +73,10 @@ def send_file(dccnet: DCCNET, frames, ack_lock: threading.Lock, finish_receiving
             print(f'SENDER: Sending frame {i}')
             dccnet.send_frame(frame, flag, id=id_to_send)
 
-            # Sends ACK
-            if ack_to_send != -1:
-                dccnet.send_frame(None, dccnet.FLAG_ACK, id=ack_to_send)
-                ack_to_send = -1
+            # # Sends ACK
+            # if ack_to_send != -1:
+            #     dccnet.send_frame(None, dccnet.FLAG_ACK, id=ack_to_send)
+            #     ack_to_send = -1
 
             if receiver_semaphore._value < 10:
                 receiver_semaphore.release()
@@ -92,23 +92,23 @@ def send_file(dccnet: DCCNET, frames, ack_lock: threading.Lock, finish_receiving
 
     print('FINISHED SENDING')
 
-    # Send ACKs
-    while True:
-        sender_semaphore.acquire()
+    # # Send ACKs
+    # while True:
+    #     sender_semaphore.acquire()
 
-        with finish_receiving_lock:
-            if has_finished_receiving:
-                if ack_to_send != -1:
-                    dccnet.send_frame(None, dccnet.FLAG_ACK, id=ack_to_send)
-                receiver_semaphore.release()
-                break
+    #     with finish_receiving_lock:
+    #         if has_finished_receiving:
+    #             if ack_to_send != -1:
+    #                 dccnet.send_frame(None, dccnet.FLAG_ACK, id=ack_to_send)
+    #             receiver_semaphore.release()
+    #             break
 
-        if ack_to_send != -1:
-            dccnet.send_frame(None, dccnet.FLAG_ACK, id=ack_to_send)
-            ack_to_send = -1
+    #     if ack_to_send != -1:
+    #         dccnet.send_frame(None, dccnet.FLAG_ACK, id=ack_to_send)
+    #         ack_to_send = -1
 
         
-        receiver_semaphore.release()
+    #     receiver_semaphore.release()
 
 
 def receive_file(dccnet: DCCNET, output_file, ack_lock: threading.Lock, finish_receiving_lock: threading.Lock,
@@ -138,9 +138,9 @@ def receive_file(dccnet: DCCNET, output_file, ack_lock: threading.Lock, finish_r
             pass
         elif flag & dccnet.FLAG_ACK and id == dccnet.id_send: # Receiving corresponding ACK
             if flag & dccnet.FLAG_END:
-                raise dccnet.InvalidFlag
+                raise DCCNET.InvalidFlag
             if data:
-                raise dccnet.InvalidPayload
+                raise DCCNET.InvalidPayload
             with ack_lock:
                 frame_was_accepted = True
             dccnet.id_send ^= 1
@@ -150,18 +150,18 @@ def receive_file(dccnet: DCCNET, output_file, ack_lock: threading.Lock, finish_r
         # Receiving retransmission
         elif id == dccnet.id_recv and checksum == dccnet.last_checksum:
             print('-------------------- Retransmission ----------------------')
-            if ack_to_send == -1:
-                ack_to_send = id # Warn to send ACK
+            dccnet.send_frame(None, dccnet.FLAG_ACK, id=id)
+
 
         # Receiving end warning
         elif id != dccnet.id_recv and flag & dccnet.FLAG_END:
             with finish_receiving_lock:
                 has_finished_receiving = True
-            ack_to_send = id # Warn to send ACK
+            dccnet.send_frame(None, dccnet.FLAG_ACK, id=id)
             dccnet.id_recv ^= 1
             dccnet.last_checksum = checksum
         elif not data:
-            raise dccnet.InvalidPayload
+            raise DCCNET.InvalidPayload
             
         #  Receiving reset warning
         elif flag & dccnet.FLAG_RESET and id == dccnet.ID_RESET:
@@ -175,7 +175,7 @@ def receive_file(dccnet: DCCNET, output_file, ack_lock: threading.Lock, finish_r
             if data:
                 with open(output_file, 'a') as out:
                     out.write(data)
-            ack_to_send = id # Warn to send ACK
+                dccnet.send_frame(None, dccnet.FLAG_ACK, id=id)
             dccnet.id_recv ^= 1
             dccnet.last_checksum = checksum
 
