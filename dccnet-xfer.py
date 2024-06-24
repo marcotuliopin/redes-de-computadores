@@ -11,7 +11,6 @@ has_finished_sending = False
 has_finished_receiving = False
 is_connection_cut = False
 frame_was_accepted = False
-ack_to_send = -1
 sender_semaphore = threading.Semaphore(10)
 receiver_semaphore = threading.Semaphore(10)
 send_lock = threading.Lock()
@@ -48,7 +47,6 @@ def send_file(dccnet: DCCNET, frames, ack_lock: threading.Lock, finish_receiving
     global has_finished_sending
     global is_connection_cut
     global frame_was_accepted
-    global ack_to_send
 
     id_to_send = 0
     for i in range(len(frames)):
@@ -62,21 +60,16 @@ def send_file(dccnet: DCCNET, frames, ack_lock: threading.Lock, finish_receiving
             frame_was_accepted = False
         while True:
             sender_semaphore.acquire()
-
             with ack_lock:
                 if frame_was_accepted: 
                     sender_semaphore.release()
                     break
-                else: sleep(1)
 
             # Sends own data
             print(f'SENDER: Sending frame {i}')
             dccnet.send_frame(frame, flag, id=id_to_send)
+            sleep(1)
 
-            # # Sends ACK
-            # if ack_to_send != -1:
-            #     dccnet.send_frame(None, dccnet.FLAG_ACK, id=ack_to_send)
-            #     ack_to_send = -1
 
             if receiver_semaphore._value < 10:
                 receiver_semaphore.release()
@@ -92,28 +85,9 @@ def send_file(dccnet: DCCNET, frames, ack_lock: threading.Lock, finish_receiving
 
     print('FINISHED SENDING')
 
-    # # Send ACKs
-    # while True:
-    #     sender_semaphore.acquire()
-
-    #     with finish_receiving_lock:
-    #         if has_finished_receiving:
-    #             if ack_to_send != -1:
-    #                 dccnet.send_frame(None, dccnet.FLAG_ACK, id=ack_to_send)
-    #             receiver_semaphore.release()
-    #             break
-
-    #     if ack_to_send != -1:
-    #         dccnet.send_frame(None, dccnet.FLAG_ACK, id=ack_to_send)
-    #         ack_to_send = -1
-
-        
-    #     receiver_semaphore.release()
-
 
 def receive_file(dccnet: DCCNET, output_file, ack_lock: threading.Lock, finish_receiving_lock: threading.Lock,
                  finish_sending_lock: threading.Lock, reset_lock: threading.Lock):
-    global ack_to_send
     global has_finished_sending
     global has_finished_receiving
     global is_connection_cut
