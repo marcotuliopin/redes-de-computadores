@@ -94,8 +94,10 @@ def receive_file(dccnet: DCCNET, output_file):
     global frame_was_accepted
 
     while True:
-        print (has_finished_receiving, has_finished_sending)
-        print(receiver_semaphore._value)
+        with finish_sending_lock:
+            with finish_receiving_lock:
+                if has_finished_receiving and has_finished_sending: 
+                    break
         receiver_semaphore.acquire()
 
         try:
@@ -159,10 +161,6 @@ def receive_file(dccnet: DCCNET, output_file):
         with finish_sending_lock:
             if has_finished_sending:
                 receiver_semaphore.release()
-            with finish_receiving_lock:
-                sender_semaphore.release()
-                if has_finished_receiving and has_finished_sending: 
-                    break
 
         if sender_semaphore._value < 10:
             sender_semaphore.release()
@@ -185,12 +183,12 @@ def main():
         sock.settimeout(5)
         sock.listen(5)
 
-        while True:
-            print('Listening...')
-            c, addr = sock.accept()
-            print(f"Listening: {addr}")
-            open_communication(c,input,output)
-            c.close()
+
+        print('Listening...')
+        c, addr = sock.accept()
+        print(f"Listening: {addr}")
+        open_communication(c,input,output)
+        c.close()
 
     else:
         host, input, output = params
