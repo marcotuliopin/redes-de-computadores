@@ -72,8 +72,6 @@ class DCCNET:
 
         data = data.decode('ascii')
 
-        # print(f"flag recv: 0x{flag:x} == {flags[flag]}, length recv: {length}, id recv: 0x{id:x}, checksum recv: 0x{recv_checksum:x}, data recv: {data}")
-        print(f"RECEBIDO\nflag recv: 0x{flag:x} == {flags[flag]}, length recv: {length}, id recv: 0x{id:x}, checksum recv: 0x{recv_checksum:x}")
         return data, flag, id, checksum
 
 
