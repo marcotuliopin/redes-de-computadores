@@ -37,8 +37,7 @@ class DCCNET:
         length = len(data)
         aux = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, 0, length, id, flag, data)
         frame = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, self.checksum(aux), length, id, flag, data)
-        print("ENVIADO")
-        print(f"flag sent: {flag:x} == {flags[flag]}, length sent: {length}, id sent: {id:x}, checksum sent: {self.checksum(aux):x}, data sent: {data}") 
+        print(f"SEN: flag: {flag:x} == {flags[flag]}, length: {length}, id: {id:x}, checksum: {self.checksum(aux):x}, data: {data}") 
         print()
         return frame
     
@@ -62,13 +61,13 @@ class DCCNET:
                 else:
                     sync_count = 0
                 a += 1
-                if a > 6:
-                    raise KeyboardInterrupt
+                # comentei aqui pq tava dando pau no md5
+                """ if a > 6:
+                    raise KeyboardInterrupt """
 
             header = self.sock.recv(self.HEADER_SIZE - 2*self.SYNC_SIZE)
         except socket.timeout:
             return None, None, None, None
-        print('Received response')
 
         checksum, length, id, flag = struct.unpack('!HHHB', header)
         data = self.sock.recv(length)
@@ -79,8 +78,8 @@ class DCCNET:
 
         data = data.decode('ascii')
 
-        print("RECEBIDO:")
-        print(f"flag recv: 0x{flag:x} == {flags[flag]}, length recv: {length}, id recv: 0x{id:x}, checksum recv: 0x{recv_checksum:x}, data recv: {data}")
+        print(f"REC: flag: {flag:x} == {flags[flag]}, length: {length}, id: {id:x}, checksum: {recv_checksum:x}, data: {data}")
+        print()
         return data, flag, id, checksum
 
 
