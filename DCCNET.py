@@ -2,14 +2,6 @@ import socket
 import struct
 from typing import Optional
 
-# For debbuging: 
-flags={
-        0x80:"FLAG_ACK",
-        0x40 :"FLAG_END",
-        0x00 :"FLAG_EMPTY",
-        0x20 :"FLAG_RESET"
-}
-
 class DCCNET:
     def __init__(self, sock: Optional[socket.socket]=None):
         # Constants
