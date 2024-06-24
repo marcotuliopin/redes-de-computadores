@@ -42,7 +42,7 @@ def send_checksum(dccnet: DCCNET, message : str, last_id : int, last_check_sum :
                  break
             elif id == last_id and checksum == last_check_sum: # retrasmission of last frame
                   dccnet.send_frame(None, flag=dccnet.FLAG_ACK, id=last_id)
-            elif id == last_id ^ 1: # endpoint lost ack
+            elif id == last_id ^ 1: # server didn't send ack
                   dccnet.send_frame(None, flag=dccnet.FLAG_ACK, id=dccnet.id_recv)
 
 def authenticate(dccnet: DCCNET, gas):
