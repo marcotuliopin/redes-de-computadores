@@ -13,20 +13,19 @@ frame_was_accepted = False
 ack_to_send = -1
 sender_semaphore = threading.Semaphore(10)
 receiver_semaphore = threading.Semaphore(10)
-send_lock = threading.Lock()
+ack_lock = threading.Lock()
+finish_sending_lock = threading.Lock()
+finish_receiving_lock = threading.Lock()
+reset_lock = threading.Lock()
+
 
 def open_communication(sock, input, output):
     frames = list(read_file_in_chunks(input))
     dccnet = DCCNET(sock)
 
-    ack_lock = threading.Lock()
-    finish_sending_lock = threading.Lock()
-    finish_receiving_lock = threading.Lock()
-    reset_lock = threading.Lock()
-
     # Create threads for sending and receiving
-    send_thread = threading.Thread(target=send_file, args=(dccnet, frames, ack_lock, finish_sending_lock, finish_receiving_lock, reset_lock))
-    recv_thread = threading.Thread(target=receive_file, args=(dccnet, output, ack_lock, finish_sending_lock, finish_receiving_lock, reset_lock))
+    send_thread = threading.Thread(target=send_file, args=(dccnet, frames))
+    recv_thread = threading.Thread(target=receive_file, args=(dccnet, output))
     try:
         # Start the threads
         recv_thread.start()
@@ -37,13 +36,11 @@ def open_communication(sock, input, output):
         # Wait for both threads to complete
         recv_thread.join()
         send_thread.join()
-        print('Closing sock')
         dccnet.sock.close()
 
     print('File transfer completed')
 
-def send_file(dccnet: DCCNET, frames, ack_lock: threading.Lock, finish_receiving_lock: threading.Lock,
-              finish_sending_lock: threading.Lock, reset_lock: threading.Lock):
+def send_file(dccnet: DCCNET, frames):
     global has_finished_sending
     global is_connection_cut
     global frame_was_accepted
@@ -89,8 +86,6 @@ def send_file(dccnet: DCCNET, frames, ack_lock: threading.Lock, finish_receiving
     with finish_sending_lock:
         has_finished_sending = True
 
-    print('FINISHED SENDING')
-
     # Send ACKs
     while True:
         sender_semaphore.acquire()
@@ -110,8 +105,7 @@ def send_file(dccnet: DCCNET, frames, ack_lock: threading.Lock, finish_receiving
         receiver_semaphore.release()
 
 
-def receive_file(dccnet: DCCNET, output_file, ack_lock: threading.Lock, finish_receiving_lock: threading.Lock,
-                 finish_sending_lock: threading.Lock, reset_lock: threading.Lock):
+def receive_file(dccnet: DCCNET, output_file):
     global ack_to_send
     global has_finished_sending
     global has_finished_receiving
@@ -190,9 +184,6 @@ def receive_file(dccnet: DCCNET, output_file, ack_lock: threading.Lock, finish_r
 
 def read_file_in_chunks(input_file, chunk_size=4096):
     with open(input_file, 'r') as f:
-        first_line = f.readline() 
-        yield first_line
-
         while True:
             chunk = f.read(chunk_size)
             if not chunk:
