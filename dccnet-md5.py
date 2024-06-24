@@ -2,14 +2,6 @@ import socket
 import sys
 import hashlib
 from DCCNET import DCCNET
-#python dccnet-md5.py 150.164.213.245:51555 2021032110:1:fd01eed7baa1eb0a3c06480a303c94cfa2b54e34045a307683e88c69e37955d2+3b3ccb9597ef0e57f427b0cde3ae23f1498b7e25c11a639aaefe45ef0eed32d6
-
-flags={
-        0x80:"FLAG_ACK",
-        0x40 :"FLAG_END",
-        0x00 :"FLAG_EMPTY",
-        0x20 :"FLAG_RESET"
-}
 
 def md5_checksum(input_string: str) -> str: 
     # Create an md5 hash object
@@ -91,7 +83,6 @@ def main():
       ip, port = server.split(sep=':')
       gas += '\n'
       try:
-          print(f"Connected to: {ip}:{port}\n\n")
           sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
           sock.connect((ip, int(port)))
       except socket.error:
@@ -99,7 +90,6 @@ def main():
           sock.connect((ip, int(port)))
       sock.settimeout(100)
       dccnet = DCCNET()
-      #test(dccnet, sock)
       comm(dccnet, sock, gas)
 
 if __name__ == '__main__':
