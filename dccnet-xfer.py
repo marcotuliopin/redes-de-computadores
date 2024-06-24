@@ -140,7 +140,7 @@ def receive_file(dccnet: DCCNET, output_file):
         # Receiving new data from external file
         elif id != dccnet.id_recv:
             if data:
-                with open(output_file, 'a') as out:
+                with open(output_file, 'w') as out:
                     out.write(data)
                 dccnet.send_frame(None, dccnet.FLAG_ACK, id=id)
             dccnet.id_recv ^= 1
