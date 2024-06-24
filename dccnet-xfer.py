@@ -85,6 +85,7 @@ def receive_file(dccnet: DCCNET, output_file):
     global is_connection_cut
     global frame_was_accepted
 
+    first_write = True
     while True:
         # End the program if there is no data being transmitted to either side
         with finish_sending_lock:
@@ -120,16 +121,6 @@ def receive_file(dccnet: DCCNET, output_file):
         # Receiving retransmission
         elif id == dccnet.id_recv and checksum == dccnet.last_checksum:
             dccnet.send_frame(None, dccnet.FLAG_ACK, id=id)
-
-        # Receiving end warning
-        elif id != dccnet.id_recv and flag & dccnet.FLAG_END:
-            with finish_receiving_lock:
-                has_finished_receiving = True
-            dccnet.send_frame(None, dccnet.FLAG_ACK, id=id)
-            dccnet.id_recv ^= 1
-            dccnet.last_checksum = checksum
-        elif not data:
-            raise DCCNET.InvalidPayload
             
         #  Receiving reset warning
         elif flag & dccnet.FLAG_RESET and id == dccnet.ID_RESET:
@@ -140,11 +131,21 @@ def receive_file(dccnet: DCCNET, output_file):
         # Receiving new data from external file
         elif id != dccnet.id_recv:
             if data:
-                with open(output_file, 'w') as out:
+                with open(output_file, 'a' if not first_write else 'w') as out:
                     out.write(data)
-                dccnet.send_frame(None, dccnet.FLAG_ACK, id=id)
+                first_write = False
+            # If there is no data, the flag must be END
+            elif not flag & dccnet.FLAG_END:
+                raise DCCNET.InvalidPayload
+
+            dccnet.send_frame(None, dccnet.FLAG_ACK, id=id)
             dccnet.id_recv ^= 1
             dccnet.last_checksum = checksum
+
+            # Receiving end warning
+            if flag & dccnet.FLAG_END:
+                with finish_receiving_lock:
+                    has_finished_receiving = True
 
         with finish_sending_lock:
             if has_finished_sending:
