@@ -54,7 +54,11 @@ def send_file(dccnet: DCCNET, frames):
 
         with ack_lock:
             frame_was_accepted = False
+
+        retry = False
         while True:
+            if retry:
+                sleep(.1)
             sender_semaphore.acquire()
             with ack_lock:
                 if frame_was_accepted: 
@@ -62,10 +66,11 @@ def send_file(dccnet: DCCNET, frames):
                     break
 
             # Sends own data
+
             print(f'SENDER: Sending frame {i}')
             dccnet.send_frame(frame, flag, id=id_to_send)
-            sleep(1)
 
+            retry = True
 
             if receiver_semaphore._value < 10:
                 receiver_semaphore.release()
@@ -82,21 +87,23 @@ def send_file(dccnet: DCCNET, frames):
     print('FINISHED SENDING')
 
 
-def receive_file(dccnet: DCCNET, output_file, ack_lock: threading.Lock, finish_receiving_lock: threading.Lock,
-                 finish_sending_lock: threading.Lock, reset_lock: threading.Lock):
+def receive_file(dccnet: DCCNET, output_file):
     global has_finished_sending
     global has_finished_receiving
     global is_connection_cut
     global frame_was_accepted
 
     while True:
+        print (has_finished_receiving, has_finished_sending)
+        print(receiver_semaphore._value)
         receiver_semaphore.acquire()
 
         try:
             data, flag, id, checksum = dccnet.recv_frame()
         except (DCCNET.NoRecvData, DCCNET.CorruptedFrame):
-            pass
-
+            if sender_semaphore._value < 10:
+                sender_semaphore.release()
+            continue
 
         # Socket timed out while receiving frame
         if flag == None:
@@ -150,12 +157,13 @@ def receive_file(dccnet: DCCNET, output_file, ack_lock: threading.Lock, finish_r
             dccnet.last_checksum = checksum
 
         with finish_sending_lock:
-            receiver_semaphore.release()
+            if has_finished_sending:
+                receiver_semaphore.release()
             with finish_receiving_lock:
                 sender_semaphore.release()
                 if has_finished_receiving and has_finished_sending: 
                     break
-        
+
         if sender_semaphore._value < 10:
             sender_semaphore.release()
 
