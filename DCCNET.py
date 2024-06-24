@@ -61,9 +61,6 @@ class DCCNET:
                     sync_count += 1
                 else:
                     sync_count = 0
-                # a += 1
-                # if a > 6:
-                #     raise KeyboardInterrupt
 
             header = self.sock.recv(self.HEADER_SIZE - 2*self.SYNC_SIZE)
         except socket.timeout:

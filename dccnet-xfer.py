@@ -1,7 +1,6 @@
 import socket
 import sys
 import threading
-import queue
 from DCCNET import DCCNET
 from time import sleep
 
