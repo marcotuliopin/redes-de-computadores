@@ -4,8 +4,6 @@ import threading
 from DCCNET import DCCNET
 from time import sleep
 
-# -c rubick.snes.2advanced.dev:51555 client_input.txt client_output.txt
-# -c 150.164.213.245:51555 client_input.txt client_output.txt
 has_finished_sending = False
 has_finished_receiving = False
 is_connection_cut = False
@@ -37,8 +35,6 @@ def open_communication(sock, input, output):
         send_thread.join()
         dccnet.sock.close()
 
-    print('File transfer completed')
-
 def send_file(dccnet: DCCNET, frames):
     global has_finished_sending
     global is_connection_cut
@@ -46,9 +42,9 @@ def send_file(dccnet: DCCNET, frames):
 
     id_to_send = 0
     for i in range(len(frames)):
-        print(f'{(len(frames) - i)} FRAMES LEFT!')
         frame = frames[i]
 
+        # Check if it is the last frame
         if i == len(frames) - 1: flag = dccnet.FLAG_END
         else: flag = dccnet.FLAG_EMPTY
 
@@ -57,17 +53,15 @@ def send_file(dccnet: DCCNET, frames):
 
         retry = False
         while True:
-            if retry:
-                sleep(.1)
+            if retry: sleep(.1)
             sender_semaphore.acquire()
+
             with ack_lock:
-                if frame_was_accepted: 
+                if frame_was_accepted: # ACK was received
                     sender_semaphore.release()
                     break
 
             # Sends own data
-
-            print(f'SENDER: Sending frame {i}')
             dccnet.send_frame(frame, flag, id=id_to_send)
 
             retry = True
@@ -75,6 +69,7 @@ def send_file(dccnet: DCCNET, frames):
             if receiver_semaphore._value < 10:
                 receiver_semaphore.release()
 
+            # Checks for cut in the connection
             with reset_lock:
                 if is_connection_cut: raise DCCNET.Reset
         id_to_send ^= 1
@@ -84,9 +79,6 @@ def send_file(dccnet: DCCNET, frames):
     with finish_sending_lock:
         has_finished_sending = True
 
-    print('FINISHED SENDING')
-
-
 def receive_file(dccnet: DCCNET, output_file):
     global has_finished_sending
     global has_finished_receiving
@@ -94,10 +86,12 @@ def receive_file(dccnet: DCCNET, output_file):
     global frame_was_accepted
 
     while True:
+        # End the program if there is no data being transmitted to either side
         with finish_sending_lock:
             with finish_receiving_lock:
                 if has_finished_receiving and has_finished_sending: 
                     break
+
         receiver_semaphore.acquire()
 
         try:
@@ -113,13 +107,10 @@ def receive_file(dccnet: DCCNET, output_file):
 
         # Receiving ACK
         elif flag & dccnet.FLAG_ACK and id != dccnet.id_send: # Receiving late ACK
-            print('-------------------- Late ack ----------------------')
             pass
         elif flag & dccnet.FLAG_ACK and id == dccnet.id_send: # Receiving corresponding ACK
-            if flag & dccnet.FLAG_END:
-                raise DCCNET.InvalidFlag
-            if data:
-                raise DCCNET.InvalidPayload
+            if flag & dccnet.FLAG_END: raise DCCNET.InvalidFlag
+            if data: raise DCCNET.InvalidPayload
             with ack_lock:
                 frame_was_accepted = True
             dccnet.id_send ^= 1
@@ -128,9 +119,7 @@ def receive_file(dccnet: DCCNET, output_file):
 
         # Receiving retransmission
         elif id == dccnet.id_recv and checksum == dccnet.last_checksum:
-            print('-------------------- Retransmission ----------------------')
             dccnet.send_frame(None, dccnet.FLAG_ACK, id=id)
-
 
         # Receiving end warning
         elif id != dccnet.id_recv and flag & dccnet.FLAG_END:
@@ -144,7 +133,6 @@ def receive_file(dccnet: DCCNET, output_file):
             
         #  Receiving reset warning
         elif flag & dccnet.FLAG_RESET and id == dccnet.ID_RESET:
-            print(f'Received RESET: {data}')
             with reset_lock:
                 is_connection_cut = True
                 raise DCCNET.Reset
@@ -176,6 +164,7 @@ def read_file_in_chunks(input_file, chunk_size=4096):
 def main():
     _, mode, *params = sys.argv
 
+    # Is to be run in server mode
     if mode == '-s':
         port, input, output = params
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -190,6 +179,7 @@ def main():
         open_communication(c,input,output)
         c.close()
 
+    # Is to be run in client mode
     else:
         host, input, output = params
         ip, port = host.split(sep=':')
