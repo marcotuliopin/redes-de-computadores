@@ -80,7 +80,7 @@ class DCCNET:
 
         print("RECEBIDO:")
         # print(f"flag recv: 0x{flag:x} == {flags[flag]}, length recv: {length}, id recv: 0x{id:x}, checksum recv: 0x{recv_checksum:x}, data recv: {data}")
-        print(f"flag recv: 0x{flag:x} == {flags[flag]}, length recv: {length}, id recv: 0x{id:x}, checksum recv: 0x{recv_checksum:x}")
+        print(f"flag recv: 0x{flag:x} == {flags[flag]}, length recv: {length}, id recv: 0x{id:x}, checksum recv: 0x{recv_checksum:x}, data: {data}")
         return data, flag, id, checksum
 
 
