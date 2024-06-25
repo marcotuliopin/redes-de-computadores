@@ -1,24 +1,15 @@
 import socket
 import sys
 import hashlib
+import time
 from DCCNET import DCCNET
 
 def md5_checksum(input_string: str) -> str: 
-    # Create an md5 hash object
-    md5_hash = hashlib.md5()
-    
-    # Encode the input string and update the hash object
+    md5_hash = hashlib.md5() 
     md5_hash.update(input_string.encode('ascii'))
     
-    # Return the hexadecimal digest of the hash
     return md5_hash.hexdigest() + "\n"
 
-"""
-A frame can only be accepted if it is an acknowledgement frame for the last transmitted frame; 
-a data frame with an identifier (ID) different from that of the last received frame; 
-a retransmission of the last received frame; 
-or a reset frame.
-"""
 
 def send_checksum(dccnet: DCCNET, message : str, last_id : int, last_check_sum : int): # send checksum and receive ack
       payload = md5_checksum(message)
@@ -27,13 +18,15 @@ def send_checksum(dccnet: DCCNET, message : str, last_id : int, last_check_sum :
             data, flag, id, checksum =  dccnet.recv_frame()
             if flag & dccnet.FLAG_RESET:
                   raise Exception(f"{data}")
-            if flag & dccnet.FLAG_ACK and id == dccnet.id_send:
+            elif flag & dccnet.FLAG_ACK and id == dccnet.id_send:
                  dccnet.id_send ^= 1
                  break
             elif id == last_id and checksum == last_check_sum: # retrasmission of last frame
                   dccnet.send_frame(None, flag=dccnet.FLAG_ACK, id=last_id)
-            elif id == last_id ^ 1: # server didn't send ack
-                  dccnet.send_frame(None, flag=dccnet.FLAG_ACK, id=dccnet.id_recv)
+            """ elif id == last_id ^ 1: # server didn't send ack
+                  dccnet.send_frame(payload, flag=dccnet.FLAG_EMPTY, id= dccnet.id_send) # sends last data frame again 
+                  #dccnet.send_frame(None, flag=dccnet.FLAG_ACK, id=dccnet.id_recv)  """
+            time.sleep(0.5)
 
 def authenticate(dccnet: DCCNET, gas):
       while True:
