@@ -1,0 +1,376 @@
+Connected to: 150.164.213.245:51555
+
+
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 143, id sent: 0x0, checksum sent: 0x6004
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x0, checksum recv: 0x7ef9, data: 
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 24, id recv: 0x0, checksum recv: 0x5420, data: authentication complete
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x0, checksum sent: 0x7ef9
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x1, checksum sent: 0xec43
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x1, checksum recv: 0x7ef8, data: 
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 17, id recv: 0x1, checksum recv: 0xf206, data: entering phase 1
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x1, checksum sent: 0x7ef8
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x0, checksum sent: 0xffd1
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x0, checksum recv: 0x7ef9, data: 
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 49, id recv: 0x0, checksum recv: 0xe81, data: test line 0 c30d8634-09c7-4f3e-909b-944f8e0770ef
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x0, checksum sent: 0x7ef9
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x1, checksum sent: 0xc968
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x1, checksum recv: 0x7ef8, data: 
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 49, id recv: 0x1, checksum recv: 0xeff6, data: test line 1 480c7c24-12dc-40ed-ab57-feb93e32e19d
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x1, checksum sent: 0x7ef8
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x0, checksum sent: 0x445b
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x0, checksum recv: 0x7ef9, data: 
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 49, id recv: 0x0, checksum recv: 0x497, data: test line 2 d3a5f6f3-92ed-4127-9229-fbf7a2370092
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x0, checksum sent: 0x7ef9
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x1, checksum sent: 0xd2b6
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x1, checksum recv: 0x7ef8, data: 
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 49, id recv: 0x1, checksum recv: 0x415d, data: test line 3 9c0d27e4-647b-4aa0-a992-dc664821191e
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x1, checksum sent: 0x7ef8
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x0, checksum sent: 0x9dc6
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x0, checksum recv: 0x7ef9, data: 
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 49, id recv: 0x0, checksum recv: 0x1053, data: test line 4 c2860f61-0879-4657-9b01-2214e461b15c
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x0, checksum sent: 0x7ef9
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x1, checksum sent: 0x9f3a
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x1, checksum recv: 0x7ef8, data: 
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 37, id recv: 0x1, checksum recv: 0xeeeb, data: entering phase 2 retransmission test
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x1, checksum sent: 0x7ef8
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x0, checksum sent: 0x34f3
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 65, id recv: 0x0, checksum recv: 0xd6bc, data: second message cannot be answered immediately due to missing ack
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x1, checksum sent: 0x7ef8
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x0, checksum sent: 0x34f3
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 65, id recv: 0x0, checksum recv: 0xd6bc, data: second message cannot be answered immediately due to missing ack
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x1, checksum sent: 0x7ef8
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x0, checksum sent: 0x34f3
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 65, id recv: 0x0, checksum recv: 0xd6bc, data: second message cannot be answered immediately due to missing ack
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x1, checksum sent: 0x7ef8
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x0, checksum sent: 0x34f3
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 65, id recv: 0x0, checksum recv: 0xd6bc, data: second message cannot be answered immediately due to missing ack
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x1, checksum sent: 0x7ef8
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x0, checksum sent: 0x34f3
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 65, id recv: 0x0, checksum recv: 0xd6bc, data: second message cannot be answered immediately due to missing ack
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x1, checksum sent: 0x7ef8
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x0, checksum sent: 0x34f3
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 65, id recv: 0x0, checksum recv: 0xd6bc, data: second message cannot be answered immediately due to missing ack
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x1, checksum sent: 0x7ef8
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x0, checksum sent: 0x34f3
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 65, id recv: 0x0, checksum recv: 0xd6bc, data: second message cannot be answered immediately due to missing ack
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x1, checksum sent: 0x7ef8
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x0, checksum sent: 0x34f3
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 65, id recv: 0x0, checksum recv: 0xd6bc, data: second message cannot be answered immediately due to missing ack
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x1, checksum sent: 0x7ef8
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x0, checksum sent: 0x34f3
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 65, id recv: 0x0, checksum recv: 0xd6bc, data: second message cannot be answered immediately due to missing ack
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x1, checksum sent: 0x7ef8
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x0, checksum sent: 0x34f3
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 65, id recv: 0x0, checksum recv: 0xd6bc, data: second message cannot be answered immediately due to missing ack
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x1, checksum sent: 0x7ef8
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x0, checksum sent: 0x34f3
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 65, id recv: 0x0, checksum recv: 0xd6bc, data: second message cannot be answered immediately due to missing ack
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x1, checksum sent: 0x7ef8
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x0, checksum sent: 0x34f3
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x0, checksum recv: 0x7ef9, data: 
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 65, id recv: 0x0, checksum recv: 0xd6bc, data: second message cannot be answered immediately due to missing ack
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x0, checksum sent: 0x7ef9
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x1, checksum sent: 0xc8a0
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x1, checksum recv: 0x7ef8, data: 
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 29, id recv: 0x1, checksum recv: 0xa1b0, data: entering phase 3 resync test
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x1, checksum sent: 0x7ef8
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x0, checksum sent: 0xb9bf
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x0, checksum recv: 0x7ef9, data: 
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 49, id recv: 0x0, checksum recv: 0xa293, data: test line 0 d8153e94-eb3f-48e9-a739-65a8b341bde0
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x0, checksum sent: 0x7ef9
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x1, checksum sent: 0x6a5c
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x1, checksum recv: 0x7ef8, data: 
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 49, id recv: 0x1, checksum recv: 0xbff7, data: test line 1 26d8ff93-6672-44ea-877d-4597a2ae0907
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x1, checksum sent: 0x7ef8
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x0, checksum sent: 0x79c8
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x0, checksum recv: 0x7ef9, data: 
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 49, id recv: 0x0, checksum recv: 0x4aef, data: test line 2 99ae68a0-ce55-4d14-a92c-46e48b11b68d
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x0, checksum sent: 0x7ef9
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x1, checksum sent: 0xf1fd
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x1, checksum recv: 0x7ef8, data: 
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 49, id recv: 0x1, checksum recv: 0xc72a, data: test line 3 19d6525f-7c27-4208-9973-1108fec57da3
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x1, checksum sent: 0x7ef8
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x0, checksum sent: 0x3712
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x0, checksum recv: 0x7ef9, data: 
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 49, id recv: 0x0, checksum recv: 0x11ee, data: test line 4 16e85879-76ff-4021-be4f-0d8caf2a72ff
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x0, checksum sent: 0x7ef9
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x1, checksum sent: 0x6617
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x1, checksum recv: 0x7ef8, data: 
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 38, id recv: 0x1, checksum recv: 0x9d49, data: entering phase 4 partial message test
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x1, checksum sent: 0x7ef8
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x0, checksum sent: 0x44ab
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x0, checksum recv: 0x7ef9, data: 
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 5, id recv: 0x0, checksum recv: 0x24ed, data: test 
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x0, checksum sent: 0x7ef9
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 44, id recv: 0x1, checksum recv: 0x60ef, data: line 0 1227748c-bb5d-4a98-b278-c9414db8fa44
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x1, checksum sent: 0x7ef8
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x1, checksum sent: 0xc9ea
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x1, checksum recv: 0x7ef8, data: 
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 5, id recv: 0x0, checksum recv: 0x24ed, data: test 
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x0, checksum sent: 0x7ef9
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 44, id recv: 0x1, checksum recv: 0x5e8, data: line 1 ce0bf04d-3c6d-46c8-85c9-c85c079046bf
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x1, checksum sent: 0x7ef8
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x0, checksum sent: 0x8acc
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x0, checksum recv: 0x7ef9, data: 
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 5, id recv: 0x0, checksum recv: 0x24ed, data: test 
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x0, checksum sent: 0x7ef9
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 44, id recv: 0x1, checksum recv: 0x329, data: line 2 f6352d8a-6a4f-440f-8b2b-d29b9043ec12
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x1, checksum sent: 0x7ef8
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x1, checksum sent: 0x6cb
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x1, checksum recv: 0x7ef8, data: 
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 5, id recv: 0x0, checksum recv: 0x24ed, data: test 
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x0, checksum sent: 0x7ef9
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 44, id recv: 0x1, checksum recv: 0xd181, data: line 3 93262ca9-194c-4363-ab55-d2cad6e871a9
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x1, checksum sent: 0x7ef8
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x0, checksum sent: 0xf23f
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x0, checksum recv: 0x7ef9, data: 
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 5, id recv: 0x0, checksum recv: 0x24ed, data: test 
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x0, checksum sent: 0x7ef9
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 44, id recv: 0x1, checksum recv: 0xb0ea, data: line 4 c4cba148-412d-42fd-b982-57bfacbfb617
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x1, checksum sent: 0x7ef8
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x1, checksum sent: 0x63d5
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x1, checksum recv: 0x7ef8, data: 
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 39, id recv: 0x0, checksum recv: 0xe382, data: entering phase 5 multiple message test
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x0, checksum sent: 0x7ef9
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x0, checksum sent: 0x80ca
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x0, checksum recv: 0x7ef9, data: 
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 100, id recv: 0x1, checksum recv: 0x2223, data: test line 0a 14ccba32-6187-4f22-891b-d713e227c25b
+test line 0b ddeff31b-4fd7-4c37-89e5-71779771b266
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x1, checksum sent: 0x7ef8
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x1, checksum sent: 0xfd0
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x1, checksum recv: 0x7ef8, data: 
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x0, checksum sent: 0x7a9d
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x0, checksum recv: 0x7ef9, data: 
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 100, id recv: 0x0, checksum recv: 0x807c, data: test line 1a 38161e96-b18c-4c1f-93ae-b1692fd20fba
+test line 1b ef8378d6-2a23-41fd-9daa-a9cc67b1d85f
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x0, checksum sent: 0x7ef9
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x1, checksum sent: 0x37f5
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x1, checksum recv: 0x7ef8, data: 
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x0, checksum sent: 0xf977
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x0, checksum recv: 0x7ef9, data: 
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 100, id recv: 0x1, checksum recv: 0xe775, data: test line 2a 74db2ca2-06fb-4a1b-bbdb-96d032a7ba23
+test line 2b 44e41f7c-8b1e-4f19-a6cc-16da20392520
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x1, checksum sent: 0x7ef8
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x1, checksum sent: 0xb9c7
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x1, checksum recv: 0x7ef8, data: 
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x0, checksum sent: 0x44c2
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x0, checksum recv: 0x7ef9, data: 
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 100, id recv: 0x0, checksum recv: 0xe0b9, data: test line 3a 1546a9b2-a881-4afd-9dc4-9aff7903ba26
+test line 3b 10b1c705-219c-49c1-a935-2b8c5da2bfa9
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x0, checksum sent: 0x7ef9
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x1, checksum sent: 0xa094
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x1, checksum recv: 0x7ef8, data: 
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x0, checksum sent: 0x637
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x0, checksum recv: 0x7ef9, data: 
+RECEBIDO:
+flag recv: 0x0 == FLAG_EMPTY, length recv: 100, id recv: 0x1, checksum recv: 0xf46c, data: test line 4a 1f9967a7-cd79-436f-9311-e124f0e8f854
+test line 4b a1d099d7-5051-45bc-b68b-808b2e71fd38
+
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x1, checksum sent: 0x7ef8
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x1, checksum sent: 0x9763
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x1, checksum recv: 0x7ef8, data: 
+ENVIADO: 
+flag sent: 0 == FLAG_EMPTY, length sent: 33, id sent: 0x0, checksum sent: 0x2ca0
+RECEBIDO:
+flag recv: 0x80 == FLAG_ACK, length recv: 0, id recv: 0x0, checksum recv: 0x7ef9, data: 
+RECEBIDO:
+flag recv: 0x40 == FLAG_END, length recv: 0, id recv: 0x0, checksum recv: 0xbef9, data: 
+ENVIADO: 
+flag sent: 80 == FLAG_ACK, length sent: 0, id sent: 0x0, checksum sent: 0x7ef9
