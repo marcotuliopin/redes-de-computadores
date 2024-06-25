@@ -2,14 +2,6 @@ import socket
 import struct
 from typing import Optional
 
-# For debbuging: 
-flags={
-        0x80:"FLAG_ACK",
-        0x40 :"FLAG_END",
-        0x00 :"FLAG_EMPTY",
-        0x20 :"FLAG_RESET"
-}
-
 class DCCNET:
     def __init__(self, sock: Optional[socket.socket]=None):
         # Constants
@@ -37,9 +29,6 @@ class DCCNET:
         length = len(data)
         aux = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, 0, length, id, flag, data)
         frame = struct.pack(f'!IIHHHB{length}s', self.SYNC, self.SYNC, self.checksum(aux), length, id, flag, data)
-        # print(f"flag sent: {flag:x} == {flags[flag]}, length sent: {length}, id sent: {id:x}, checksum sent: {self.checksum(aux):x}, data sent: {data}") 
-        print(f"ENVIADO: \nflag sent: {flag:x} == {flags[flag]}, length sent: {length}, id sent: 0x{id:x}, checksum sent: 0x{self.checksum(aux):x}") 
-
         return frame
     
     def unpack(self, frame):
@@ -61,9 +50,6 @@ class DCCNET:
                     sync_count += 1
                 else:
                     sync_count = 0
-                # a += 1
-                # if a > 6:
-                #     raise KeyboardInterrupt
 
             header = self.sock.recv(self.HEADER_SIZE - 2*self.SYNC_SIZE)
         except socket.timeout:
@@ -78,9 +64,6 @@ class DCCNET:
 
         data = data.decode('ascii')
 
-        print("RECEBIDO:")
-        # print(f"flag recv: 0x{flag:x} == {flags[flag]}, length recv: {length}, id recv: 0x{id:x}, checksum recv: 0x{recv_checksum:x}, data recv: {data}")
-        print(f"flag recv: 0x{flag:x} == {flags[flag]}, length recv: {length}, id recv: 0x{id:x}, checksum recv: 0x{recv_checksum:x}, data: {data}")
         return data, flag, id, checksum
 
 
