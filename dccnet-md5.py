@@ -76,7 +76,7 @@ def main():
       ip, port = server.split(sep=':')
       gas += '\n'
       try:
-          sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+          sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
           sock.connect((ip, int(port)))
       except socket.error:
           sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
