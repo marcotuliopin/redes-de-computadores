@@ -11,17 +11,17 @@ def md5_checksum(input_string: str) -> str:
     return md5_hash.hexdigest() + "\n"
 
 
-def send_checksum(dccnet: DCCNET, message : str, last_id : int, last_check_sum : int): # send checksum and receive ack
+def send_checksum(dccnet: DCCNET, message : str, last_id : int, last_check_sum : int): # Send checksum and receive ack
       payload = md5_checksum(message)
       while True:
             dccnet.send_frame(payload, flag= dccnet.FLAG_EMPTY, id = dccnet.id_send)
             data, flag, id, checksum =  dccnet.recv_frame()
             if flag & dccnet.FLAG_RESET:
-                  raise Exception(f"{data}")
+                  raise DCCNET.Reset
             elif flag & dccnet.FLAG_ACK and id == dccnet.id_send:
                  dccnet.id_send ^= 1
                  break
-            elif id == last_id and checksum == last_check_sum: # retrasmission of last frame
+            elif id == last_id and checksum == last_check_sum: # Retrasmission of last frame
                   dccnet.send_frame(None, flag=dccnet.FLAG_ACK, id=last_id)
             """ elif id == last_id ^ 1: # server didn't send ack
                   dccnet.send_frame(payload, flag=dccnet.FLAG_EMPTY, id= dccnet.id_send) # sends last data frame again 
@@ -31,9 +31,9 @@ def send_checksum(dccnet: DCCNET, message : str, last_id : int, last_check_sum :
 def authenticate(dccnet: DCCNET, gas):
       while True:
             dccnet.send_frame(gas)
-            data, flag, id, _ = dccnet.recv_frame()
+            _, flag, id, _ = dccnet.recv_frame()
             if flag & dccnet.FLAG_RESET:
-                  raise Exception(f"{data}")
+                  raise DCCNET.Reset
             if flag & dccnet.FLAG_ACK and id == dccnet.id_send:
                   dccnet.id_send ^= 1
                   break
@@ -49,7 +49,7 @@ def comm(dccnet: DCCNET, sock, gas):
             while True: # Tries to receive a data frame
                   data, flag, id, checksum = dccnet.recv_frame() 
                   if flag & dccnet.FLAG_RESET:
-                        raise Exception(f"{data}")
+                        raise DCCNET.Reset
                   elif flag == dccnet.FLAG_EMPTY or flag & dccnet.FLAG_END:
                         dccnet.send_frame(data = None, flag = dccnet.FLAG_ACK, id=id)
                         if id == dccnet.id_recv:
@@ -82,8 +82,13 @@ def main():
           sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
           sock.connect((ip, int(port)))
       sock.settimeout(100)
-      dccnet = DCCNET()
-      comm(dccnet, sock, gas)
+      try:
+            dccnet = DCCNET()
+            comm(dccnet, sock, gas)
+      except DCCNET.Reset:
+            pass
+      finally:
+            dccnet.sock.close()
 
 if __name__ == '__main__':
     main()
