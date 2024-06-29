@@ -53,7 +53,7 @@ def send_file(dccnet: DCCNET, frames):
 
         retry = False
         while True:
-            if retry: sleep(.1)
+            if retry: sleep(.5)
             sender_semaphore.acquire()
 
             with ack_lock:
@@ -168,9 +168,15 @@ def main():
     # Is to be run in server mode
     if mode == '-s':
         port, input, output = params
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.bind(('0.0.0.0', int(port)))
-        sock.settimeout(5)
+        sock = None
+        try:
+            sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+            sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
+            sock.bind(('::', int(port)))
+        except socket.error as e:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.bind(('0.0.0.0', int(port)))
+        sock.settimeout(10)
         sock.listen(5)
 
 
