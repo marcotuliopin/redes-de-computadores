@@ -53,7 +53,7 @@ def send_file(dccnet: DCCNET, frames):
 
         retry = False
         while True:
-            if retry: sleep(.1)
+            if retry: sleep(1)
             sender_semaphore.acquire()
 
             with ack_lock:
