@@ -99,6 +99,11 @@ app.get("/api/rank/escaped", (req, res) => {
   res.json(response);
 });
 
-app.listen(port, () => {
+// Server and keep-alive settings
+const server = app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
+
+// Enable keep-alive for the server
+server.keepAliveTimeout = 60000; // Keep the connection alive for 60 seconds
+server.headersTimeout = 65000; // Allow 5 seconds extra for headers

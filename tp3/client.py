@@ -1,23 +1,26 @@
 import socket
 import csv
 import json
+import sys
 
 # Configuration
 HOST = 'localhost'
-PORT = 3000
-RANK_ENDPOINT = '/api/rank/sunk'
+SUNK_RANK_ENDPOINT = '/api/rank/sunk'
+ESCAPED_RANK_ENDPOINT = '/api/rank/escaped'
 GAME_ENDPOINT = '/api/game'
 LIMIT = 50  # Set limit to maximum 50
 START = 1
+SOCKET_TIMEOUT = 10  # Timeout in seconds
 
-def create_socket():
-    """Create and return a new socket."""
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+def create_socket(ip, port):
+    """Create and return a new socket with a timeout."""
     try:
-        sock.connect((HOST, PORT))
-        print(f"Connected to {HOST}:{PORT}")
-    except Exception as e:
-        print(f"Error connecting to server: {e}")
+        sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+        sock.connect((ip, int(port)))
+    except socket.error:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((ip, int(port)))
+    sock.settimeout(100)
     return sock
 
 def send_request(sock, endpoint):
@@ -29,68 +32,81 @@ def send_request(sock, endpoint):
                f"\r\n")
     try:
         sock.sendall(request.encode())
-        print(f"Request sent: {request}")
-    except Exception as e:
+    except socket.error as e:
         print(f"Error sending request: {e}")
-        return ""
-
-    response = b""
-    while True:
-        chunk = sock.recv(4096)
-        if not chunk:
-            break
-        response += chunk
+        return "", ""
     
-    response_text = response.decode()
-    print(f"Received response: {response_text[:500]}...")  # Print first 500 chars for debugging
-    return response_text
-
-def parse_response(response):
-    """Extract JSON data from HTTP response."""
-    header_end = response.find("\r\n\r\n")
-    if header_end == -1:
-        return {}
-    body = response[header_end + 4:]
+    response = b""
     try:
-        return json.loads(body)  # Safely parse JSON
-    except json.JSONDecodeError:
-        print(f"Failed to parse JSON from response: {body}")
+        while True:
+            chunk = sock.recv(4096)
+            response += chunk
+            if b"\r\n\r\n" in response:
+                break
+    except socket.error as e:
+        print(f"Error receiving response: {e}")
+        return "", ""
+    
+    # Separate the headers from the body
+    header_end = response.find(b"\r\n\r\n")
+    headers = response[:header_end].decode()
+    body = response[header_end + 4:]
+    
+    # Parse headers to find Content-Length
+    content_length = None
+    for line in headers.split("\r\n"):
+        if line.startswith("Content-Length:"):
+            content_length = int(line.split(":")[1].strip())
+            break
+    
+    # Receive the rest of the body if necessary
+    if content_length is not None:
+        while len(body) < content_length:
+            chunk = sock.recv(4096)
+            body += chunk
+    
+    return headers, body.decode()
+
+def parse_response(headers, body):
+    """Extract JSON data from HTTP response."""
+    try:
+        return json.loads(body)
+    except json.JSONDecodeError as e:
+        print(f"Error parsing JSON: {e}")
         return {}
 
-def fetch_game_ids(sock, start):
-    """Fetch game IDs from the /api/rank/sunk endpoint."""
-    response = send_request(sock, f"{RANK_ENDPOINT}?limit={LIMIT}&start={start}")
-    data = parse_response(response)
+def fetch_game_ids(sock, opt):
+    """Fetch game IDs from the endpoint."""
+    endpoint = ""
+    if opt == 1:
+        endpoint = SUNK_RANK_ENDPOINT
+    elif opt == 2:
+        endpoint = ESCAPED_RANK_ENDPOINT
+    else:
+        raise ValueError("Invalid option")
+    
+    headers, body = send_request(sock, f"{endpoint}?limit={LIMIT}&start={START}")
+    data = parse_response(headers, body)
     game_ids = data.get('games', [])
+    
+    headers, body = send_request(sock, f"{endpoint}?limit={LIMIT}&start={START + LIMIT}")
+    data = parse_response(headers, body)
+    game_ids += data.get('games', [])
     
     return game_ids
 
-def fetch_all_game_ids(sock):
-    """Fetch all game IDs needed for analysis."""
-    all_game_ids = []
-    
-    # Fetch the first batch of game IDs
-    game_ids = fetch_game_ids(sock, START)
-    all_game_ids.extend(game_ids)
-    
-    # Fetch the second batch of game IDs
-    game_ids = fetch_game_ids(sock, START + LIMIT)
-    all_game_ids.extend(game_ids)
-    
-    return all_game_ids
-
 def fetch_game_details(sock, game_id):
     """Fetch game details from the /api/game/{id} endpoint."""
-    response = send_request(sock, f"{GAME_ENDPOINT}/{game_id}")
-    data = parse_response(response)
+    headers, body = send_request(sock, f"{GAME_ENDPOINT}/{game_id}")
+    data = parse_response(headers, body)
     return data
 
-def analyze_data(games):
+def analyze_data_best_gas_perf(games):
     """Analyze data to count games and calculate average sunk ships per GAS."""
     gas_data = {}
     for game in games:
-        gas = game.get('gas')  # Ensure the 'gas' field is correct
-        sunk_ships = game.get('sunk_ships', 0)
+        gas = game['game_stats'].get('auth')
+        sunk_ships = game['game_stats'].get('sunk_ships', 0)
 
         if gas not in gas_data:
             gas_data[gas] = {'count': 0, 'total_sunk': 0}
@@ -107,35 +123,79 @@ def analyze_data(games):
     analysis.sort(key=lambda x: x[1], reverse=True)
     return analysis
 
+def analyze_data_best_cannon_perf(games):
+
+    def build_normalized_cannon_placement(cannons):
+        n_cannons = [0] * 5
+        for _ , row in cannons:
+           n_cannons[row] += 1
+        
+        n_rows = [0] * 8
+        normalized_cannons = ""
+        for n in n_cannons:
+            if n > 0:
+                n_rows[n-1] += 1
+        for c in n_rows:
+            normalized_cannons += str(c)
+        
+        return normalized_cannons 
+    
+    cannon_data = {}
+    for game in games:
+        cannons = game['game_stats'].get('cannons')
+        normalized_cannons = build_normalized_cannon_placement(cannons)
+        sunk_ships = game['game_stats'].get('sunk_ships', 0)
+        if normalized_cannons not in cannon_data:
+            cannon_data[normalized_cannons] = {'count': 0, 'total_sunk': 0}
+        cannon_data[normalized_cannons]['count'] += 1
+        cannon_data[normalized_cannons]['total_sunk'] += sunk_ships
+
+    analysis = []
+    for cannon, data in cannon_data.items():
+        count = data['count']
+        average_sunk = data['total_sunk'] / count
+        analysis.append((cannon, average_sunk))
+    
+    analysis.sort(key=lambda x: x[1], reverse=False)
+
+    return analysis
+
+
 def save_to_csv(data, filename):
     """Save the analysis results to a CSV file."""
     with open(filename, mode='w', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(['GAS', 'Number of Games', 'Average Sunk Ships'])
         writer.writerows(data)
 
-def main():
-    sock = create_socket()
-    
-    try:
-        # Fetch all game IDs (split into two requests if necessary)
-        game_ids = fetch_all_game_ids(sock)
-        print(f"Game IDs: {game_ids}")
-        print(f"Number of game IDs: {len(game_ids)}")
 
-        # Fetch detailed game data
+def main():
+    sock = None
+    # Example usage: python client.py localhost 3000 1 output.csv
+    if len(sys.argv) != 5:
+        print("Usage: python client.py <ip> <port> <option> <output>")
+
+    _, ip , port,  option, output = sys.argv
+    global HOST 
+    HOST = ip
+    try:
+        sock = create_socket(ip, port)
+        game_ids = fetch_game_ids(sock, int(option))
         games = []
         for game_id in game_ids:
             game_details = fetch_game_details(sock, game_id)
-            if game_details:
-                games.append(game_details)
-
-        # Analyze and save results
-        analysis = analyze_data(games)
-        save_to_csv(analysis, 'gas_analysis.csv')
+            games.append(game_details)
+        if option == '1':
+            analysis = analyze_data_best_gas_perf(games)
+            save_to_csv(analysis, output)
+        elif option == '2':
+            analysis = analyze_data_best_cannon_perf(games)
+            save_to_csv(analysis, output)
     
+    except Exception as e:
+        print(f"An error occurred: {e}")
     finally:
-        sock.close()
+        if sock:
+            sock.close()
 
 if __name__ == '__main__':
     main()
