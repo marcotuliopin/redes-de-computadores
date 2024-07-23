@@ -2,8 +2,9 @@
 __pycache__
 /__pycache__
 __pycache__/*
-.vscode/*
+.vscode
 test.py
 test2.py
-client.py
 server.py
+node_modules/
+package-lock.json
