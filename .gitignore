@@ -8,3 +8,4 @@ test2.py
 server.py
 node_modules/
 package-lock.json
+*.csv
