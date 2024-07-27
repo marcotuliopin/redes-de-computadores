@@ -1,0 +1,32 @@
+.App {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 50px;
+}
+
+.queries {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 16px;
+
+}
+
+.queries button {
+  border: none;
+  width: 150px;
+  height: 30px;
+  border-radius: 2px;
+  background-color: #44964d;
+
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+  
+.queries button:hover {
+  background-color: #3f8248;
+  cursor: pointer;
+}

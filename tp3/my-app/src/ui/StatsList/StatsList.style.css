@@ -1,0 +1,19 @@
+table {
+    margin: auto;
+    width: 50%;
+    table-layout: fixed;
+    text-align: center;
+}
+
+td:nth-child(1) {
+    width: 40%;
+    overflow-x: scroll;
+}
+
+td, th {
+    border: 1px solid #000000;
+}
+
+tr:nth-child(odd) {
+    background-color: #ededed;
+}
