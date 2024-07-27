@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Rankings</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Game Rankings</h1>
+    <div id="content">
+        <h2>Search by Game ID</h2>
+        <input type="number" id="gameIdInput" placeholder="Enter Game ID">
+        <button onclick="fetchGameById()">Search</button>
+        <div id="gameInfo"></div>
+        
+        <h2>Rankings</h2>
+        <div>
+            <label for="limitInput">Limit:</label>
+            <input type="number" id="limitInput" placeholder="Enter Limit" value="10">
+            <label for="startInput">Start:</label>
+            <input type="number" id="startInput" placeholder="Enter Start" value="0">
+        </div>
+        <div>
+            <button onclick="fetchRanking('sunk')">Top Sunk Ships</button>
+            <button onclick="fetchRanking('escaped')">Top Escaped Ships</button>
+        </div>
+        <div id="rankingInfo"></div>
+        <div id="pagination"></div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
