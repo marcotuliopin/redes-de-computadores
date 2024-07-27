@@ -43,7 +43,7 @@ app.get("/api/game/:id", (req, res) => {
 
 app.get("/api/rank/sunk", (req, res) => {
   const { valid, limit, start, error } = parseQueryParams(req);
-    console.log("called sunk")
+  console.log("called sunk")
   if (!valid) {
     return res.status(400).json({ error });
   }
@@ -72,7 +72,7 @@ app.get("/api/rank/sunk", (req, res) => {
 
 app.get("/api/rank/escaped", (req, res) => {
   const { valid, limit, start, error } = parseQueryParams(req);
-
+  console.log("called escaped")
   if (!valid) {
     return res.status(400).json({ error });
   }
