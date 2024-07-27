@@ -3,6 +3,8 @@ const fs = require("fs");
 const app = express();
 const port = 3000;
 
+app.use(express.static('public'));
+
 // Load JSON data from a file
 const loadData = () => {
   const data = fs.readFileSync("scores.jsonl", "utf8");
