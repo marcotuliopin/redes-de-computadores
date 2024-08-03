@@ -1,9 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
 
+:root {
+  --light-primary-color: #f8eded;
+  --light-secondary-color: #106c72;
+  --dark-primary-color: #173b45;
+  --dark-secondary-color: #b43f3f;
+}
+
 body {
 	padding: 0;
 	margin: 0;
 	font-size: 16px;
-	background: var(--background-color);
+	background-color: var(--light-primary-color);
 	font-family: 'Open Sans', sans-serif;
+	overflow-x: hidden;
 }

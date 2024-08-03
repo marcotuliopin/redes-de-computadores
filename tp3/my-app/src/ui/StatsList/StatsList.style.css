@@ -3,17 +3,40 @@ table {
     width: 50%;
     table-layout: fixed;
     text-align: center;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+
+    font-family: 'Open Sans', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: #333333;
+}
+
+thead {
+    background-color: var(--light-secondary-color);
+    background-image: linear-gradient(rgb(0 0 0/0%) 0 0);
+    color: #ffffff;
+    width: 100%;
+}
+
+th, td {
+    padding: 12px, 15px;
+}
+
+tr {
+    border-bottom: 1px solid #333333;
+}
+
+tr.active-row {
+    font-weight: bold;
+    color: var(--dark-secondary-color);
 }
 
 td:nth-child(1) {
     width: 40%;
-    overflow-x: scroll;
-}
-
-td, th {
-    border: 1px solid #000000;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
 }
 
 tr:nth-child(odd) {
-    background-color: #ededed;
+  background-image: linear-gradient(rgb(0 0 0/6%) 0 0);
 }

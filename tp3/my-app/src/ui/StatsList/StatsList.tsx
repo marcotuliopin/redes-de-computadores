@@ -20,7 +20,7 @@ export const StatsList: FC<StatsListProps> = ({ gameList }) => {
         <tbody>
           {gameList.map((game, i) => (
             <tr key={`game-${game.id}`} id={`game-${i}`}>
-              <td className="gas">{game.gas}</td>
+              <td>{game.gas}</td>
               <td>{game.escaped}</td>
               <td>{game.sunk}</td>
             </tr>

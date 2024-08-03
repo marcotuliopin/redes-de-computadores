@@ -9,15 +9,18 @@ const enum Options {
   Escaped = 'escaped',
 };
 
+const gamesPerApiCall = 50;
+
 export const App = () => {
   const [games, setGames] = useState<Array<GameStats>>([]);
+  const [gamesGathered, setGamesGathered] = useState<number>(0);
 
   const handleClick = async (option: Options) => {
     let ids = null;
     if (option === Options.Sunk)
-      ids = await getSunkRankGameIds();
+      ids = await getSunkRankGameIds(1, 50);
     else
-      ids = await getEscapedRankGameIds();
+      ids = await getEscapedRankGameIds(1, 50);
 
     if (!ids) return null;
 
@@ -25,16 +28,19 @@ export const App = () => {
     const infos = (await Promise.all(infosPromises)).filter(
       (info) => info !== null
     );
+
     setGames(infos as GameStats[]);
+    setGamesGathered(gamesGathered + gamesPerApiCall);
 
     return infos;
   };
 
   return (
     <div className="App">
+      <div className="header">Bridge Defense Analytics</div>
       <div className="queries">
-        <button onClick={() => handleClick(Options.Sunk)}>Sunk Rank</button>
-        <button onClick={() => handleClick(Options.Escaped)}>Escaped Rank</button>
+        <button className="sunk-btn" onClick={() => handleClick(Options.Sunk)}>Sunk Rank</button>
+        <button className="escaped-btn" onClick={() => handleClick(Options.Escaped)}>Escaped Rank</button>
       </div>
       <StatsList gameList={games} />
     </div>

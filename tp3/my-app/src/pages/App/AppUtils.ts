@@ -1,12 +1,13 @@
 import { GameStats } from "../../shared/entities/GameStats";
 
-const LIMIT = 50;
-const START = 1;
-
-export const getSunkRankGameIds = async (): Promise<Array<number> | null> => {
+export const getSunkRankGameIds = async (
+  start: number,
+  limit: number
+): Promise<Array<number> | null> => {
+  console.log(limit);
   try {
     const response = await fetch(
-      `http://localhost:3000/api/rank/sunk?limit=${LIMIT}&start=${START}`
+      `http://localhost:3000/api/rank/sunk?limit=${limit}&start=${start}`
     );
     const data = await response.json();
     console.log(data);
@@ -17,18 +18,21 @@ export const getSunkRankGameIds = async (): Promise<Array<number> | null> => {
   }
 };
 
-export const getEscapedRankGameIds = async (): Promise<Array<number> | null> => {
-    try {
-      const response = await fetch(
-        `http://localhost:3000/api/rank/escaped?limit=${LIMIT}&start=${START}`
-      );
-      const data = await response.json();
-      return data.games;
-    } catch (error) {
-      console.log(error);
-      return null;
-    }
-  };
+export const getEscapedRankGameIds = async (
+  start: number,
+  limit: number
+): Promise<Array<number> | null> => {
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/rank/escaped?limit=${limit}&start=${start}`
+    );
+    const data = await response.json();
+    return data.games;
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+};
 
 export const getGameDetails = async (id: number): Promise<GameStats | null> => {
   try {
