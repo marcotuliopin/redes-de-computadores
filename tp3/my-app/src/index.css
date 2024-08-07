@@ -1,10 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
 
 :root {
-  --light-primary-color: #f8eded;
-  --light-secondary-color: #106c72;
-  --dark-primary-color: #173b45;
-  --dark-secondary-color: #b43f3f;
+  --light-primary-color: #575f8d;
+  --light-secondary-color: #b993cc;
+  --light-terciary-color: #424769;
+  --dark-primary-color: #2D3250;
+  --dark-secondary-color: #dd9051;
 }
 
 body {
