@@ -5,7 +5,6 @@ table {
     table-layout: fixed;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
     background-color: var(--light-primary-color);
-    border-collapse: collapse;
 
     font-family: 'Open Sans', sans-serif;
     font-weight: 700;
@@ -42,7 +41,25 @@ tr {
     border-bottom: 1px solid #333333;
 }
 
-.selected {
+.orderable-col {
+    position: relative;
+    text-align: center;
+}
+
+.orderable-col .chevron {
+    position: absolute;
+    right: 0;
+    width: 12px;
+    height: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.orderable-col .chevron:hover {
+    cursor:pointer;
+}
+
+selected {
     font-weight: bold;
     background-color: var(--light-terciary-color) !important;
     color: #ffffff !important;

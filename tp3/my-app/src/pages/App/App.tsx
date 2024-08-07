@@ -3,17 +3,14 @@ import { StatsList } from "../../ui/StatsList";
 import { getEscapedRankGameIds, getGameDetails, getSunkRankGameIds } from "./AppUtils";
 import { useState } from "react";
 import { GameStats } from "../../shared/entities/GameStats";
-
-const enum Options {
-  Sunk = 'sunk',
-  Escaped = 'escaped',
-};
+import { Options } from "../../shared/enums/Options";
 
 const gamesPerApiCall = 50;
 
 export const App = () => {
   const [games, setGames] = useState<Array<GameStats>>([]);
   const [gamesGathered, setGamesGathered] = useState<number>(0);
+  const [ascending, setAscending] = useState<boolean>(false);
 
   const handleClick = async (option: Options) => {
     let ids = null;
@@ -35,6 +32,18 @@ export const App = () => {
     return infos;
   };
 
+  const handleChevronClick = (option: Options) => {
+    let sortedGames = [...games];
+    if (option === Options.Sunk) {
+      sortedGames = sortedGames.sort((a, b) => b.sunk - a.sunk);
+    }
+    else {
+      sortedGames = sortedGames.sort((a, b) => b.escaped - a.escaped);
+    }
+    console.log(sortedGames);
+    setGames(sortedGames);
+  };
+
   return (
     <div className="App">
       <div className="header">Bridge Defense Analytics</div>
@@ -42,7 +51,7 @@ export const App = () => {
         <button className="sunk-btn" onClick={() => handleClick(Options.Sunk)}>Sunk Rank</button>
         <button className="escaped-btn" onClick={() => handleClick(Options.Escaped)}>Escaped Rank</button>
       </div>
-      <StatsList gameList={games} />
+      <StatsList gameList={games} handleChevronClick={handleChevronClick}/>
     </div>
   );
 };
