@@ -2,10 +2,10 @@
 
 :root {
   --light-primary-color: #575f8d;
-  --light-secondary-color: #b993cc;
+  --light-secondary-color: #bd78ea;
   --light-terciary-color: #424769;
-  --dark-primary-color: #2D3250;
-  --dark-secondary-color: #dd9051;
+  --dark-primary-color: #292f54;
+  --dark-secondary-color: #c06e2b;
 }
 
 body {

@@ -14,9 +14,21 @@ table {
 }
 
 thead {
-    background-color: var(--light-secondary-color);
+    position: relative;
+    background-color: #352758;
     color: #ffffff;
     width: 100%;
+}
+
+thead::before {
+    content: "";
+    background-image: url('/public/interlaced.png');
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    opacity: .1;
 }
 
 th, td {

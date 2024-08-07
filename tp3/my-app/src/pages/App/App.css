@@ -25,6 +25,17 @@
   height: 70px;
 }
 
+.header::before {
+    content: "";
+    background-image: url('/public/interlaced.png');
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    opacity: .12;
+}
+
 .queries {
   display: flex;
   flex-direction: row;
