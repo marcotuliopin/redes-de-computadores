@@ -40,7 +40,7 @@ export const StatsList: FC<StatsListProps> = ({
                   style={{
                     transform:
                       isFlipped && sortBy === Options.Escaped
-                        ? "rotate(180deg)"
+                        ? "rotate(180deg) translateY(40%)"
                         : "translateY(-50%)",
                     transition: "transform 0.3s",
                   }}
@@ -57,7 +57,7 @@ export const StatsList: FC<StatsListProps> = ({
                   style={{
                     transform:
                       isFlipped && sortBy === Options.Sunk
-                        ? "rotate(180deg)"
+                        ? "rotate(180deg) translateY(40%)"
                         : "translateY(-50%)",
                     transition: "transform 0.3s",
                   }}
