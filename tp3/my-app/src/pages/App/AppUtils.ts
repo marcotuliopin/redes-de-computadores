@@ -1,17 +1,18 @@
 import { GameStats } from "../../shared/entities/GameStats";
 
 export const getSunkRankGameIds = async (
-  start: number,
-  limit: number
-): Promise<Array<number> | null> => {
-  console.log(limit);
+  request: string
+)  : Promise<{ games: Array<number>; prev: string | null; next: string | null } | null> => {
   try {
     const response = await fetch(
-      `http://localhost:3000/api/rank/sunk?limit=${limit}&start=${start}`
+      `http://localhost:3000/` + request
     );
     const data = await response.json();
-    console.log(data);
-    return data.games;
+    return {
+      games: data.games,
+      prev: data.prev,
+      next: data.next
+    };
   } catch (error) {
     console.log(error);
     return null;
@@ -19,15 +20,18 @@ export const getSunkRankGameIds = async (
 };
 
 export const getEscapedRankGameIds = async (
-  start: number,
-  limit: number
-): Promise<Array<number> | null> => {
-  try {
-    const response = await fetch(
-      `http://localhost:3000/api/rank/escaped?limit=${limit}&start=${start}`
-    );
-    const data = await response.json();
-    return data.games;
+  request: string
+)  : Promise<{ games: Array<number>; prev: string | null; next: string | null } | null> => {
+    try {
+      const response = await fetch(
+        `http://localhost:3000/`+ request
+      );
+      const data = await response.json();
+      return {
+        games: data.games,
+        prev: data.prev,
+        next: data.next
+      };
   } catch (error) {
     console.log(error);
     return null;

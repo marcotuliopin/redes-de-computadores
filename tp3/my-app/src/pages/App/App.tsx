@@ -11,15 +11,23 @@ export const App = () => {
   const [games, setGames] = useState<Array<GameStats>>([]);
   const [gamesGathered, setGamesGathered] = useState<number>(0);
   const [ascending, setAscending] = useState<boolean>(false);
+  const [prevUrl, setPrevUrl] = useState<string | null>(null);
+  const [nextUrl, setNextUrl] = useState<string | null>(null);
+
 
   const handleClick = async (option: Options) => {
-    let ids = null;
-    if (option === Options.Sunk)
-      ids = await getSunkRankGameIds(1, 50);
-    else
-      ids = await getEscapedRankGameIds(1, 50);
+    let results = null;
+    if (option === Options.Sunk) {
+      results = await getSunkRankGameIds("api/rank/sunk?limit=50&start=1");
+    } else {
+      results = await getEscapedRankGameIds("api/rank/escaped?limit=50&start=1");
+    }
 
-    if (!ids) return null;
+    if (!results) return null;
+
+    const { games: ids, prev, next } = results;
+    setPrevUrl(prev);
+    setNextUrl(next);
 
     const infosPromises = ids?.map((id) => getGameDetails(id));
     const infos = (await Promise.all(infosPromises)).filter(
@@ -31,6 +39,53 @@ export const App = () => {
 
     return infos;
   };
+
+  const handleNext = async (option: Options) => {
+    let results = null;
+    if (option === Options.Sunk) {
+      results = await getSunkRankGameIds(nextUrl);
+    } else {
+      results = await getEscapedRankGameIds(nextUrl);
+    }
+    if (!results) return null;
+
+    const { games: ids, prev, next } = results;
+    setPrevUrl(prev);
+    setNextUrl(next);
+
+    const infosPromises = ids?.map((id) => getGameDetails(id));
+    const infos = (await Promise.all(infosPromises)).filter(
+      (info) => info !== null
+    );
+
+    setGames(infos as GameStats[]);
+    setGamesGathered(gamesGathered + gamesPerApiCall);
+    return infos;
+  };
+
+  const handlePrev = async (option: Options) => {
+    let results = null;
+    if (option === Options.Sunk) {
+      results = await getSunkRankGameIds(prevUrl);
+    } else {
+      results = await getEscapedRankGameIds(prevUrl);
+    }
+    if (!results) return null;
+
+    const { games: ids, prev, next } = results;
+    setPrevUrl(prev);
+    setNextUrl(next);
+
+    const infosPromises = ids?.map((id) => getGameDetails(id));
+    const infos = (await Promise.all(infosPromises)).filter(
+      (info) => info !== null
+    );
+
+    setGames(infos as GameStats[]);
+    setGamesGathered(gamesGathered + gamesPerApiCall);
+    return infos;
+  };
+
 
   const handleChevronClick = (option: Options) => {
     let sortedGames = [...games];
