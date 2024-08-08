@@ -28,7 +28,7 @@ export const StatsList: FC<StatsListProps> = ({
   };
 
   return (
-    <div>
+    <div className="wrapper">
       <table>
         <thead>
           <tr>

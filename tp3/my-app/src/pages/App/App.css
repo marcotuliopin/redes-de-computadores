@@ -15,19 +15,21 @@
   justify-content: center;
 
   font-family: Verdana, sans-serif;
-  font-weight: 700;
+  font-weight: 500;
+  letter-spacing: 0.2px;
   font-size: 24px;
   text-align: center;
   color: #ffffff;
+  border-bottom: 1px solid var(--dark-secondary-color);
 
   width: 100dvw;
-  background-color: var(--dark-primary-color);
+  background-color: var(--header-color);
   height: 70px;
 }
 
 .header::before {
     content: "";
-    background-image: url('/public/interlaced.png');
+    background-image: url('/public/black-orchid.png');
     position: absolute;
     top: 0;
     right: 0;
@@ -44,27 +46,21 @@
 }
 
 .queries button {
-  border: none;
   width: 150px;
   height: 45px;
   border-radius: 2px;
+  color: #ffffff;
+  border: 1px solid var(--dark-secondary-color);
+  background-color: transparent;
+  transition: background-color 0.3s ease; 
 
   font-family: 'Open Sans', sans-serif;
-  font-weight: 700;
-  font-size: 15px;
-  color: #FFFFFF;
+	font-weight: 300;
+	letter-spacing: 0.1px;
+	font-size: 13px;
 }
 
-  
 .queries button:hover {
   cursor: pointer;
-  background-image: linear-gradient(rgb(0 0 0/20%) 0 0);
-}
-
-.sunk-btn {
-  background-color: var(--dark-secondary-color);
-}
-
-.escaped-btn {
-  background-color: var(--light-secondary-color);
+  background-color:rgb(20% 20% 20%);
 }

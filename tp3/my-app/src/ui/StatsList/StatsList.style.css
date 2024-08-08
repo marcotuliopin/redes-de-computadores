@@ -1,14 +1,22 @@
+.wrapper {
+    width: 60%;
+    border: 1px solid var(--dark-secondary-color);
+    border-radius: 2px;
+    margin: auto;
+}
+
 table {
     margin: auto;
-    width: 50%;
+    width: 100%;
     text-align: center;
     table-layout: fixed;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
-    background-color: var(--light-primary-color);
+    border-collapse: collapse;
 
     font-family: 'Open Sans', sans-serif;
-    font-weight: 700;
-    font-size: 15px;
+	font-weight: 300;
+	letter-spacing: 0.1px;
+	font-size: 13px;
     color: #ffffff;
 }
 
@@ -21,7 +29,6 @@ thead {
 
 thead::before {
     content: "";
-    background-image: url('/public/interlaced.png');
     position: absolute;
     top: 0;
     right: 0;
@@ -31,14 +38,23 @@ thead::before {
 }
 
 th, td {
-    padding: 12px 15px;
+    padding: 8px 10px;
     max-width: 100px;
     overflow-x: hidden;
 }
 
+th {
+	font-weight: 500;
+	letter-spacing: 0.1px;
+	font-size: 13px;
+    background-color: var(--header-color);
+    border-bottom: 1px solid var(--dark-secondary-color);
+}
+
 tr {
     position: relative;
-    border-bottom: 1px solid #333333;
+    border-bottom: 1px solid var(--dark-secondary-color);
+    transition: background-color 0.3s ease; 
 }
 
 .orderable-col {
@@ -51,18 +67,19 @@ tr {
     right: 0;
     width: 12px;
     height: 12px;
-    top: 50%;
-    transform: translateY(-50%);
+    top: 40%;
+    transform: translateY(-60%);
+    transition: color 0.3s ease; 
+    color: var(--dark-secondary-color);
 }
 
 .orderable-col .chevron:hover {
     cursor:pointer;
+    color: #ffffff;
 }
 
-selected {
-    font-weight: bold;
+.selected {
     background-color: var(--light-terciary-color) !important;
-    color: #ffffff !important;
 }
 
 .expandable {
@@ -93,12 +110,13 @@ selected {
     top: 0;
     bottom: 0;
     background-color: inherit;
+    border: 1px solid var(--dark-secondary-color);
     z-index: -1;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
 }
 
 .expandable:hover::after {
-    background-color: var(--light-primary-color);
+    background-color: var(--background-color);
 }
 
 .selected .expandable::after {
@@ -110,5 +128,13 @@ selected {
 }
 
 tr:nth-child(even) {
-  background-image: linear-gradient(rgb(0 0 0/6%) 0 0);
+    background-color: #222020;
+}
+
+tr:nth-child(even):hover {
+    background-color:rgb(25% 25% 25%);
+}
+
+tr:nth-child(odd):hover {
+    background-color:rgb(20% 20% 20%);
 }
