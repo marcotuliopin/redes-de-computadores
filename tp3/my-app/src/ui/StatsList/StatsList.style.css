@@ -1,5 +1,5 @@
 .wrapper {
-    width: 60%;
+    width: auto;
     border: 1px solid var(--dark-secondary-color);
     border-radius: 2px;
     margin: auto;
@@ -65,17 +65,7 @@ tr {
 .orderable-col .chevron {
     position: absolute;
     right: 0;
-    width: 12px;
-    height: 12px;
     top: 40%;
-    transform: translateY(-60%);
-    transition: color 0.3s ease; 
-    color: var(--dark-secondary-color);
-}
-
-.orderable-col .chevron:hover {
-    cursor:pointer;
-    color: #ffffff;
 }
 
 .selected {

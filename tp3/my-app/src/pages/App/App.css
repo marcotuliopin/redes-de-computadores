@@ -64,3 +64,25 @@
   cursor: pointer;
   background-color:rgb(20% 20% 20%);
 }
+
+.table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  width: 60%;
+  margin: auto;
+}
+
+.table-menu {
+  display: flex;
+  gap: 2px;
+  flex-direction: row;
+  align-self: flex-end;
+  justify-content: center;
+  align-items: center;
+  max-width: max-content;
+
+  color: #ffffff;
+  font-weight: 300;
+}

@@ -5,7 +5,7 @@ export const getSunkRankGameIds = async (
 )  : Promise<{ games: Array<number>; prev: string | null; next: string | null } | null> => {
   try {
     const response = await fetch(
-      `http://localhost:3000/` + request
+      `http://localhost:3000` + request
     );
     const data = await response.json();
     return {
@@ -14,7 +14,6 @@ export const getSunkRankGameIds = async (
       next: data.next
     };
   } catch (error) {
-    console.log(error);
     return null;
   }
 };
@@ -24,7 +23,7 @@ export const getEscapedRankGameIds = async (
 )  : Promise<{ games: Array<number>; prev: string | null; next: string | null } | null> => {
     try {
       const response = await fetch(
-        `http://localhost:3000/`+ request
+        `http://localhost:3000`+ request
       );
       const data = await response.json();
       return {
@@ -33,7 +32,6 @@ export const getEscapedRankGameIds = async (
         next: data.next
       };
   } catch (error) {
-    console.log(error);
     return null;
   }
 };
@@ -49,7 +47,6 @@ export const getGameDetails = async (id: number): Promise<GameStats | null> => {
       sunk: data.game_stats.sunk_ships,
     };
   } catch (error) {
-    console.log(error);
     return null;
   }
 };

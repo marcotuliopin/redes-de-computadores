@@ -6,7 +6,7 @@ import { Options } from "../../shared/enums/Options";
 
 interface StatsListProps {
   gameList: Array<GameStats>;
-  handleChevronClick: (option: Options) => void;
+  handleChevronClick: (option: Options, order: boolean) => void;
 }
 
 export const StatsList: FC<StatsListProps> = ({
@@ -22,9 +22,13 @@ export const StatsList: FC<StatsListProps> = ({
   };
 
   const onSort = (option: Options) => {
-    handleChevronClick(option);
-    setIsFlipped(!isFlipped);
-    setSortBy(option);
+    handleChevronClick(option, isFlipped);
+    if (sortBy === option) {
+      setIsFlipped(!isFlipped);
+    } else {
+      setSortBy(option);
+      setIsFlipped(true);
+    }
   };
 
   return (
@@ -32,6 +36,7 @@ export const StatsList: FC<StatsListProps> = ({
       <table>
         <thead>
           <tr>
+            <th>Id</th>
             <th>Gas</th>
             <th>
               <div className="orderable-col">
@@ -77,6 +82,7 @@ export const StatsList: FC<StatsListProps> = ({
               onClick={() => handleRowClick(i)}
               className={selectedRow === i ? "selected" : ""}
             >
+              <td>{game.id}</td>
               <td className="expandable">{game.gas}</td>
               <td>{game.escaped}</td>
               <td>{game.sunk}</td>
