@@ -19,3 +19,16 @@ body {
 	letter-spacing: 0.1px;
 	font-size: 13px;
 }
+
+.chevron {
+    transform: translateY(-60%);
+    transition: color 0.3s ease; 
+    color: var(--dark-secondary-color);
+    width: 12px;
+    height: 12px;
+}
+
+.chevron:hover {
+    cursor:pointer;
+    color: #ffffff;
+}
