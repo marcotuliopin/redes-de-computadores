@@ -9,8 +9,21 @@ app.use(cors());
 
 // Load JSON data from a file
 const loadData = () => {
-  const data = fs.readFileSync("scores.jsonl", "utf8");
-  return data.split("\n").filter(Boolean).map(JSON.parse);
+  const lines = fs.readFileSync("scores.jsonl", "utf8");
+  let data = lines.split("\n").filter(Boolean).map(JSON.parse);
+  console.log(typeof(data))
+  data.map( (game, index) => {
+    if(game.shots_received === undefined) {
+      game.shots_received = 0;
+    }
+    if(game.valid_shots === undefined) {
+      game.valid_shots = 0;
+    }
+    if(game.sunk_ships === undefined) {
+      game.sunk_ships = 0;
+    }
+  })
+  return data;
 };
 
 const data = loadData();
@@ -33,9 +46,9 @@ const parseQueryParams = (req) => {
 
 app.get("/api/game/:id", (req, res) => {
   const gameId = parseInt(req.params.id, 10);
-  const game = data.find((entry) => entry.id === gameId);
-  console.log("called game id")
-  if (game) {
+  let aux = data.find((entry) => entry.id === gameId);
+  if (aux) {
+    const {id, ... game} = aux;
     res.json({
       game_id: gameId,
       game_stats: game,
@@ -47,7 +60,6 @@ app.get("/api/game/:id", (req, res) => {
 
 app.get("/api/rank/sunk", (req, res) => {
   const { valid, limit, start, error } = parseQueryParams(req);
-  console.log("called sunk")
   if (!valid) {
     return res.status(400).json({ error });
   }
@@ -76,7 +88,6 @@ app.get("/api/rank/sunk", (req, res) => {
 
 app.get("/api/rank/escaped", (req, res) => {
   const { valid, limit, start, error } = parseQueryParams(req);
-  console.log("called escaped")
   if (!valid) {
     return res.status(400).json({ error });
   }
